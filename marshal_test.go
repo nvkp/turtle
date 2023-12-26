@@ -13,6 +13,12 @@ type triple struct {
 	Object    string `turtle:"object"`
 }
 
+type tripleWithPointers struct {
+	Subject   *string `turtle:"subject"`
+	Predicate *string `turtle:"predicate"`
+	Object    *string `turtle:"object"`
+}
+
 type subject string
 type predicate string
 type object string
@@ -199,6 +205,44 @@ var marshalTestCases = map[string]struct {
 	<http://xmlns.com/foaf/0.1/name> <Spiderman>, <Человек-паук> .
 `,
 	},
+	"triple_struct_with_pointers": {
+		triples: &tripleWithPointers{
+			Subject:   ptr("http://example.org/person/Mark_Twain"),
+			Predicate: ptr("http://example.org/relation/author"),
+			Object:    ptr("http://example.org/books/Huckleberry_Finn"),
+		},
+		expString: `<http://example.org/person/Mark_Twain> <http://example.org/relation/author> <http://example.org/books/Huckleberry_Finn> .
+`,
+	},
+	"nil_input": {
+		triples:   nil,
+		expString: ``,
+		expErr:    turtle.ErrInvalidValueType,
+	},
+	"no_subject_specified": {
+		triples: triple{
+			Predicate: "http://example.org/relation/author",
+			Object:    "http://example.org/books/Huckleberry_Finn",
+		},
+		expString: ``,
+		expErr:    turtle.ErrNoSubjectSpecified,
+	},
+	"no_predicate_specified": {
+		triples: triple{
+			Subject: "http://example.org/person/Mark_Twain",
+			Object:  "http://example.org/books/Huckleberry_Finn",
+		},
+		expString: ``,
+		expErr:    turtle.ErrNoPredicateSpecified,
+	},
+	"no_object_specified": {
+		triples: triple{
+			Subject:   "http://example.org/person/Mark_Twain",
+			Predicate: "http://example.org/relation/author",
+		},
+		expString: ``,
+		expErr:    turtle.ErrNoObjectSpecified,
+	},
 }
 
 func TestMarshal(t *testing.T) {
@@ -206,7 +250,7 @@ func TestMarshal(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			b, err := turtle.Marshal(tc.triples)
 			assert.Equal(t, tc.expString, string(b), "Marshal function should have returned a correct byte data")
-			assert.ErrorIs(t, tc.expErr, err, "Marshal function should have returned a correct error")
+			assert.ErrorIs(t, err, tc.expErr, "Marshal function should have returned a correct error")
 		})
 	}
 }

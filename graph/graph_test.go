@@ -1,21 +1,22 @@
-package turtle
+package graph_test
 
 import (
 	"testing"
 
+	"github.com/nvkp/turtle/graph"
 	"github.com/stretchr/testify/assert"
 )
 
 var graphTestCases = map[string]struct {
 	triples  [][3]string
-	expected graph
+	expected graph.Graph
 }{
 	"simple_graph": {
 		triples: [][3]string{
 			{"a", "b", "c"},
 			{"c", "d", "e"},
 		},
-		expected: graph{
+		expected: graph.Graph{
 			"a": {
 				"b": {"c"},
 			},
@@ -29,7 +30,7 @@ var graphTestCases = map[string]struct {
 			{"a", "b", "c"},
 			{"a", "c", "e"},
 		},
-		expected: graph{
+		expected: graph.Graph{
 			"a": {
 				"b": {"c"},
 				"c": {"e"},
@@ -41,7 +42,7 @@ var graphTestCases = map[string]struct {
 			{"a", "b", "c"},
 			{"a", "b", "d"},
 		},
-		expected: graph{
+		expected: graph.Graph{
 			"a": {
 				"b": {"c", "d"},
 			},
@@ -54,7 +55,7 @@ var graphTestCases = map[string]struct {
 			{"a", "e", "c"},
 			{"a", "e", "d"},
 		},
-		expected: graph{
+		expected: graph.Graph{
 			"a": {
 				"b": {"c", "d"},
 				"e": {"c", "d"},
@@ -66,10 +67,10 @@ var graphTestCases = map[string]struct {
 func TestGraph(t *testing.T) {
 	for name, tc := range graphTestCases {
 		t.Run(name, func(t *testing.T) {
-			g := make(graph)
+			g := make(graph.Graph)
 
 			for _, triple := range tc.triples {
-				_ = g.accept(triple)
+				_ = g.Accept(triple)
 			}
 
 			assert.Equal(t, tc.expected, g, "accept method should have created a correct graph structure")

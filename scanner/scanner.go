@@ -1,4 +1,4 @@
-package turtle
+package scanner
 
 import (
 	"bufio"
@@ -14,24 +14,24 @@ var regexDataType = regexp.MustCompile(`(\".+\")\^\^.+`)
 
 var regexLabel = regexp.MustCompile(`(\".+\")@.+`)
 
-type scanner struct {
+type Scanner struct {
 	s        *bufio.Scanner
 	t        [3]string
 	prefixes map[string]string
 	base     string
 }
 
-func newScanner(data []byte) *scanner {
+func New(data []byte) *Scanner {
 	s := bufio.NewScanner(bytes.NewReader(data))
 	prefixes := make(map[string]string)
 	s.Split(scanTurtle)
-	return &scanner{
+	return &Scanner{
 		s:        s,
 		prefixes: prefixes,
 	}
 }
 
-func (s *scanner) next() bool {
+func (s *Scanner) Next() bool {
 	var index int
 	var triple [3]string
 
@@ -131,7 +131,7 @@ func (s *scanner) next() bool {
 	}
 }
 
-func (s *scanner) triple() [3]string {
+func (s *Scanner) Triple() [3]string {
 	return s.t
 }
 
@@ -166,10 +166,6 @@ func scanTurtle(data []byte, atEOF bool) (advance int, token []byte, err error) 
 	for width, i := 0, start; i < len(data); i += width {
 		var r rune
 		r, width = utf8.DecodeRune(data[i:])
-
-		s := string(r)
-		fmt.Println()
-		_ = s
 
 		// if we bump to space character, we return the word, unless there is a literal started
 		if unicode.IsSpace(r) && !literal {

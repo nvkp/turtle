@@ -1,4 +1,4 @@
-package turtle
+package scanner
 
 import (
 	"bufio"
@@ -363,14 +363,14 @@ func TestScanTurtle(t *testing.T) {
 func TestNext(t *testing.T) {
 	for name, tc := range scanTestCases {
 		t.Run(name, func(t *testing.T) {
-			s := newScanner(tc.data)
+			s := New(tc.data)
 			actual := make([][3]string, 0)
 			for {
-				ok := s.next()
+				ok := s.Next()
 				if !ok {
 					break
 				}
-				actual = append(actual, s.triple())
+				actual = append(actual, s.Triple())
 			}
 			assert.Equal(t, tc.expectedTriples, actual, "scanner should have created correct turtle triples")
 		})

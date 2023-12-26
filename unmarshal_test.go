@@ -7,6 +7,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func ptr[T any](v T) *T {
+	return &v
+}
+
 func TestUnmarshalStruct(t *testing.T) {
 	var target triple
 	data := []byte(`<http://example.org/person/Mark_Twain> <http://example.org/relation/author> <http://example.org/books/Huckleberry_Finn> .`)
@@ -65,4 +69,63 @@ func TestUnmarshalCompact(t *testing.T) {
 	err := turtle.Unmarshal(data, &target)
 	assert.NoError(t, err, "function Unmarshal should have returned no error")
 	assert.Equal(t, expected, target, "function Unmarshal should have assigned correct values to the target slice")
+}
+
+func TestUnmarshalSliceOfPointers(t *testing.T) {
+	target := make([]*triple, 0)
+	data := []byte(`<http://example.org/person/Mark_Twain> <http://example.org/relation/author> <http://example.org/books/Huckleberry_Finn> .
+	<http://example.org/person/Mark_Twain> <http://example.org/relation/author2> <http://example.org/books/Huckleberry_Finn2> .`)
+	expected := []*triple{
+		{
+			Subject:   "http://example.org/person/Mark_Twain",
+			Predicate: "http://example.org/relation/author",
+			Object:    "http://example.org/books/Huckleberry_Finn",
+		},
+		{
+			Subject:   "http://example.org/person/Mark_Twain",
+			Predicate: "http://example.org/relation/author2",
+			Object:    "http://example.org/books/Huckleberry_Finn2",
+		},
+	}
+
+	err := turtle.Unmarshal(data, &target)
+	assert.NoError(t, err, "function Unmarshal should have returned no error")
+	assert.Equal(t, expected, target, "function Unmarshal should have assigned correct values to the target slice")
+}
+
+func TestUnmarshalSliceStructsWithPointers(t *testing.T) {
+	target := make([]tripleWithPointers, 0)
+	data := []byte(`<http://example.org/person/Mark_Twain> <http://example.org/relation/author> <http://example.org/books/Huckleberry_Finn> .
+	<http://example.org/person/Mark_Twain> <http://example.org/relation/author2> <http://example.org/books/Huckleberry_Finn2> .`)
+	expected := []tripleWithPointers{
+		{
+			Subject:   ptr("http://example.org/person/Mark_Twain"),
+			Predicate: ptr("http://example.org/relation/author"),
+			Object:    ptr("http://example.org/books/Huckleberry_Finn"),
+		},
+		{
+			Subject:   ptr("http://example.org/person/Mark_Twain"),
+			Predicate: ptr("http://example.org/relation/author2"),
+			Object:    ptr("http://example.org/books/Huckleberry_Finn2"),
+		},
+	}
+
+	err := turtle.Unmarshal(data, &target)
+	assert.NoError(t, err, "function Unmarshal should have returned no error")
+	assert.Equal(t, expected, target, "function Unmarshal should have assigned correct values to the target slice")
+}
+
+func TestUnmarshalNil(t *testing.T) {
+	data := []byte(`<http://example.org/person/Mark_Twain> <http://example.org/relation/author> <http://example.org/books/Huckleberry_Finn> .`)
+
+	err := turtle.Unmarshal(data, nil)
+	assert.ErrorIs(t, err, turtle.ErrNilValue, "function Unmarshal should have returned correct error")
+}
+
+func TestUnmarshalNotAPointer(t *testing.T) {
+	var target triple
+	data := []byte(`<http://example.org/person/Mark_Twain> <http://example.org/relation/author> <http://example.org/books/Huckleberry_Finn> .`)
+
+	err := turtle.Unmarshal(data, target)
+	assert.ErrorIs(t, err, turtle.ErrNoPointerValue, "function Unmarshal should have returned correct error")
 }
