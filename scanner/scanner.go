@@ -10,9 +10,12 @@ import (
 	"unicode/utf8"
 )
 
-var regexDataType = regexp.MustCompile(`(\".+\")\^\^.+`)
+const rdfTypeIRI = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
 
-var regexLabel = regexp.MustCompile(`(\".+\")@.+`)
+var (
+	regexDataType = regexp.MustCompile(`(\".+\")\^\^.+`)
+	regexLabel    = regexp.MustCompile(`(\".+\")@.+`)
+)
 
 type Scanner struct {
 	s        *bufio.Scanner
@@ -119,6 +122,10 @@ func (s *Scanner) Next() bool {
 		// TODO remove data type
 		if regexLabel.MatchString(token) {
 			token = regexLabel.ReplaceAllString(token, `$1`)
+		}
+
+		if token == "a" {
+			token = rdfTypeIRI
 		}
 
 		triple[index] = strings.Trim(token, "<>\"")
