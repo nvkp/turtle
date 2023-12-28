@@ -1,65 +1,149 @@
 package turtle
 
 import (
+	"errors"
+	"fmt"
 	"reflect"
+
+	"github.com/nvkp/turtle/scanner"
 )
 
+const (
+	subject int = iota
+	predicate
+	object
+)
+
+// Unmarshal TODO comment
 func Unmarshal(data []byte, v interface{}) error {
-	s := newScanner(data)
-	return decode(s, reflect.ValueOf(v)) // TODO panics when not pointer, what does goccy do?
-}
-
-/*
-if typ == nil || typ.Kind() != reflect.Ptr || p == 0 {
-		return &InvalidUnmarshalError{Type: runtime.RType2Type(typ)}
+	if v == nil {
+		return ErrNilValue
 	}
-*/
 
-func decode(s *scanner, v reflect.Value) error {
-	switch v.Kind() {
-	case reflect.Ptr:
-		return decode(s, v.Elem())
-	case reflect.Slice:
-		for s.next() {
-			item := reflect.New(v.Type().Elem()).Elem()
-			// TODO check item is struct
-			decodeStruct(s, item)
-			v.Set(reflect.Append(v, item))
-		}
-	case reflect.Struct:
-		ok := s.next()
-		if !ok {
-			return nil
-		}
-		decodeStruct(s, v)
+	rv := reflect.ValueOf(v)
+	if rv.Kind() != reflect.Ptr {
+		return ErrNoPointerValue
+	}
+
+	err := unmarshal(scanner.New(data), rv)
+	if err != nil {
+		return fmt.Errorf("unmarshal: %v", err)
 	}
 
 	return nil
 }
 
-func decodeStruct(s *scanner, v reflect.Value) {
-	t := s.triple()
-	for i := 0; i < v.NumField(); i++ {
-		field := v.Field(i)
-		if !(field.Kind() == reflect.String) {
-			continue
+func unmarshal(s *scanner.Scanner, v reflect.Value) error {
+	switch v.Kind() {
+	case reflect.Ptr:
+		return unmarshal(s, v.Elem())
+	case reflect.Slice:
+		return unmarshalSlice(s, v)
+	case reflect.Struct:
+		ok := s.Next()
+		if !ok {
+			return nil
+		}
+		return unmarshalStruct(s, v)
+	}
+
+	return nil
+}
+
+func unmarshalSlice(s *scanner.Scanner, v reflect.Value) error {
+	if v.Kind() != reflect.Slice {
+		return errors.New("value not a slice")
+	}
+	// get type of the elements of the slice
+	itemType := v.Type().Elem()
+
+	for s.Next() {
+		var item reflect.Value
+		var err error
+
+		switch itemType.Kind() {
+		case reflect.Pointer:
+			// if slice contains pointers, create item as
+			// reflect pointer to element zero value and call unmarshalStruct on
+			// the pointer's element
+			item = reflect.New(itemType.Elem())
+			err = unmarshalStruct(s, item.Elem())
+		case reflect.Struct:
+			// if slice contains structs, create item as
+			// zero value struct and call unmarshalStruct on it
+			item = reflect.New(itemType).Elem()
+			err = unmarshalStruct(s, item)
+		default:
+			return errors.New("invalid slice's item type")
 		}
 
+		if err != nil {
+			return err
+		}
+
+		if !v.CanSet() {
+			return errors.New("cannot append to slice")
+		}
+
+		// append the filled item (either struct or pointer to struct) to the slice
+		v.Set(reflect.Append(v, item))
+	}
+
+	return nil
+}
+
+func unmarshalStruct(s *scanner.Scanner, v reflect.Value) error {
+	if v.Kind() != reflect.Struct {
+		return errors.New("value not struct")
+	}
+	t := s.Triple()
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+
+		if !field.CanSet() {
+			return errors.New("field cannot be changed")
+		}
+
+		// get the tag value
 		tag := v.Type().Field(i).Tag.Get("turtle")
 		if tag == "" {
 			continue
 		}
 
-		if tag == "subject" {
-			field.SetString(t[0])
+		// pick correct value from current triple based on the tag value
+		var word string
+		var part int
+		switch tag {
+		case "subject":
+			part = subject
+		case "predicate":
+			part = predicate
+		case "object":
+			part = object
+		}
+		word = t[part]
+
+		// if field is string set value
+		if field.Kind() == reflect.String {
+			field.SetString(word)
 		}
 
-		if tag == "predicate" {
-			field.SetString(t[1])
-		}
+		// if field is pointer
+		if field.Kind() == reflect.Pointer {
+			pointerType := field.Type().Elem()
+			// check that the field is pointer to string
+			if pointerType.Kind() != reflect.String {
+				continue
+			}
 
-		if tag == "object" {
-			field.SetString(t[2])
+			// create new reflect value of pointer to string
+			stringValue := reflect.New(pointerType)
+			// set value to the pointed string
+			stringValue.Elem().SetString(word)
+			// set the pointer as value of the struct field
+			field.Set(stringValue)
 		}
 	}
+
+	return nil
 }

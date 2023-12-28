@@ -1,13 +1,13 @@
-package turtle
+package graph
 
 import (
 	"fmt"
 	"sort"
 )
 
-type graph map[string]map[string][]string
+type Graph map[string]map[string][]string
 
-func (g graph) accept(t [3]string) error {
+func (g Graph) Accept(t [3]string) error {
 	if g == nil {
 		return nil
 	}
@@ -47,7 +47,7 @@ func contains(objects []string, s string) bool {
 	return false
 }
 
-func (g graph) bytes() ([]byte, error) {
+func (g Graph) Bytes() ([]byte, error) {
 	if g == nil {
 		return nil, nil
 	}
@@ -112,7 +112,7 @@ func writeObjects(b *[]byte, objects []string) {
 	}
 }
 
-func (g graph) sortSubjects() []string {
+func (g Graph) sortSubjects() []string {
 	sortedSubjects := make(sort.StringSlice, 0, len(g))
 	for subject := range g {
 		sortedSubjects = append(sortedSubjects, subject)
