@@ -3,8 +3,8 @@ package graph_test
 import (
 	"testing"
 
+	"github.com/nvkp/turtle/assert"
 	"github.com/nvkp/turtle/graph"
-	"github.com/stretchr/testify/assert"
 )
 
 var graphTestCases = map[string]struct {

@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/nvkp/turtle"
-	"github.com/stretchr/testify/assert"
+	"github.com/nvkp/turtle/assert"
 )
 
 func ptr[T any](v T) *T {
