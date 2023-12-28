@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/nvkp/turtle/assert"
 )
 
 var scanTestCases = map[string]struct {
