@@ -10,24 +10,38 @@ import (
 )
 
 var (
-	ErrInvalidValueType     = errors.New("invalid value's type")
-	ErrNoPointerValue       = errors.New("value not a pointer")
-	ErrNilValue             = errors.New("value is nil")
-	ErrNoSubjectSpecified   = errors.New("no subject tag specified in struct")
+	// ErrInvalidValueType is returned by Marshal when an invalid value is passed
+	ErrInvalidValueType = errors.New("invalid value's type")
+	// ErrNoSubjectSpecified is returned by Marshal when the provided struct does not contain a field with a turtle:"subject" tag
+	ErrNoSubjectSpecified = errors.New("no subject tag specified in struct")
+	// ErrNoPredicateSpecified is returned by Marshal when the provided struct does not contain a field with a turtle:"predicate" tag
 	ErrNoPredicateSpecified = errors.New("no predicate tag specified in struct")
-	ErrNoObjectSpecified    = errors.New("no object tag specified in struct")
+	// ErrNoObjectSpecified is returned by Marshal when the provided struct does not contain a field with a turtle:"object" tag
+	ErrNoObjectSpecified = errors.New("no object tag specified in struct")
 )
 
-// Marshal TODO comment
+// Marshal serializes the provided data structure into RDF Turtle format.
+// The function accepts the to-be-serialized data as an empty interface
+// and returns the byte slice with the result and possible error value.
+// It is able to handle single struct, struct, a slice, an array or
+// a pointer to all three.
+//
+// The fields of the structs passed to the function have to be annotated
+// by Golang tag `turtle` defining which of the fields correspond to
+// which part of the RDF triple (either "subject", "predicate" or "object").
+//
+// The compact version of the Turtle format is used. The resulting Turtle
+// triples are sorted alphabetically first by subjects, then by predicates
+// and then by objects.
 func Marshal(v interface{}) ([]byte, error) {
-	g := make(graph.Graph)
+	g := graph.New()
 	if err := marshal(g, reflect.ValueOf(v)); err != nil {
 		return nil, fmt.Errorf("marshal: %w", err)
 	}
 	return g.Bytes()
 }
 
-func marshal(g graph.Graph, v reflect.Value) error {
+func marshal(g *graph.Graph, v reflect.Value) error {
 	switch v.Kind() {
 	case reflect.Ptr:
 		// if value is pointer marhal the pointed value
@@ -49,7 +63,7 @@ func marshal(g graph.Graph, v reflect.Value) error {
 	return nil
 }
 
-func marshalStruct(g graph.Graph, v reflect.Value) error {
+func marshalStruct(g *graph.Graph, v reflect.Value) error {
 	var t [3]string
 
 	for i := 0; i < v.NumField(); i++ {

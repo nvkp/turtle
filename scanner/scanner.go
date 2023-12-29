@@ -17,6 +17,9 @@ var (
 	regexLabel    = regexp.MustCompile(`(\".+\")@.+`)
 )
 
+// Scanner uses bufio.Scanner to parse the provided byte slice word by word.
+// It keeps information about prefixes and base of the provided graph and
+// the next triple to be read.
 type Scanner struct {
 	s        *bufio.Scanner
 	t        [3]string
@@ -24,16 +27,19 @@ type Scanner struct {
 	base     string
 }
 
+// New accepts a byte slice of the Turtle data and returns a new scanner.Scanner.
 func New(data []byte) *Scanner {
 	s := bufio.NewScanner(bytes.NewReader(data))
-	prefixes := make(map[string]string)
 	s.Split(scanTurtle)
 	return &Scanner{
 		s:        s,
-		prefixes: prefixes,
+		prefixes: make(map[string]string),
 	}
 }
 
+// Next tries to extract a next triple from the provided data, when succesful it
+// stores the new triple and returns true. If not it returns false. Another calls
+// to Next would also return false.
 func (s *Scanner) Next() bool {
 	var index int
 	var triple [3]string
@@ -44,7 +50,7 @@ func (s *Scanner) Next() bool {
 		}
 		token := s.s.Text()
 
-		// TODO comment
+		// if bumped into a prefix form, extract and store the prefix and its value
 		if token == "@prefix" {
 			if ok := s.s.Scan(); !ok {
 				return false
@@ -67,7 +73,7 @@ func (s *Scanner) Next() bool {
 			continue
 		}
 
-		// TODO comment
+		// if bumped into a base form, extract and store its value
 		if token == "@base" {
 			if ok := s.s.Scan(); !ok {
 				return false
@@ -83,12 +89,14 @@ func (s *Scanner) Next() bool {
 			continue
 		}
 
+		// multiple predicates of a single subject
 		if token == ";" {
 			triple[0] = s.t[0] // reuse subject
 			index = 1
 			continue
 		}
 
+		// multiple objects of a single predicate
 		if token == "," {
 			triple[0] = s.t[0] // reuse subject
 			triple[1] = s.t[1] // reuse predicate
@@ -96,11 +104,12 @@ func (s *Scanner) Next() bool {
 			continue
 		}
 
+		// ignore the "end of triple" keyword
 		if token == "." {
 			continue
 		}
 
-		// TODO comment
+		// apply the stored prefixes
 		for prefix, value := range s.prefixes {
 			if !strings.HasPrefix(token, fmt.Sprintf("%s:", prefix)) {
 				continue
@@ -109,21 +118,22 @@ func (s *Scanner) Next() bool {
 			token = fmt.Sprintf("%s%s", value, token[i+1:])
 		}
 
-		// TODO comment
+		// apply the stored base
 		if strings.HasPrefix(token, "<#") {
 			token = fmt.Sprintf("%s%s", s.base, token[2:])
 		}
 
-		// TODO remove data type
+		// remove data type suffix
 		if regexDataType.MatchString(token) {
 			token = regexDataType.ReplaceAllString(token, `$1`)
 		}
 
-		// TODO remove data type
+		// remove label
 		if regexLabel.MatchString(token) {
 			token = regexLabel.ReplaceAllString(token, `$1`)
 		}
 
+		// replace "a" keyword with rdf:type predicate
 		if token == "a" {
 			token = rdfTypeIRI
 		}
@@ -138,12 +148,13 @@ func (s *Scanner) Next() bool {
 	}
 }
 
+// Triple returns the currently stored triple.
 func (s *Scanner) Triple() [3]string {
 	return s.t
 }
 
 func scanTurtle(data []byte, atEOF bool) (advance int, token []byte, err error) {
-	// Skip leading spaces.
+	// skip leading spaces
 	start := 0
 	var comment bool
 	for width := 0; start < len(data); start += width {
@@ -166,10 +177,10 @@ func scanTurtle(data []byte, atEOF bool) (advance int, token []byte, err error) 
 			break
 		}
 	}
-	// Scan until space, marking end of word.
+
+	// scan until space, marking end of word
 	var literal bool
 	var iri bool
-
 	for width, i := 0, start; i < len(data); i += width {
 		var r rune
 		r, width = utf8.DecodeRune(data[i:])
@@ -196,10 +207,12 @@ func scanTurtle(data []byte, atEOF bool) (advance int, token []byte, err error) 
 			iri = !iri
 		}
 	}
-	// If we're at EOF, we have a final, non-empty, non-terminated word. Return it.
+
+	// if we're at EOF, we have a final, non-empty, non-terminated word
 	if atEOF && len(data) > start {
 		return len(data), data[start:], nil
 	}
-	// Request more data.
+
+	// request more data.
 	return start, nil, nil
 }
