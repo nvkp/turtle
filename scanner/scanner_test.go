@@ -221,7 +221,7 @@ var scanTestCases = map[string]struct {
 	"read_prefix": {
 		data: []byte(`@prefix foaf: <http://xmlns.com/foaf/0.1/> .
 		@prefix rel: <http://www.perceive.net/schemas/relationship/> .
-		
+
 		<http://example.org/green-goblin>
 			rel:enemyOf <http://example.org/spiderman> ;
 			<http://www.w3.org/1999/02/22-rdf-syntax-ns#type> foaf:Person ;
@@ -256,7 +256,7 @@ var scanTestCases = map[string]struct {
 		data: []byte(`@base <http://example.org/> .
 		@prefix foaf: <http://xmlns.com/foaf/0.1/> .
 		@prefix rel: <http://www.perceive.net/schemas/relationship/> .
-		
+
 		<#green-goblin>
 			rel:enemyOf <#spiderman> ;
 			<http://www.w3.org/1999/02/22-rdf-syntax-ns#type> foaf:Person ;
@@ -336,6 +336,40 @@ var scanTestCases = map[string]struct {
 			{"http://example.org/spiderman", "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", "http://xmlns.com/foaf/0.1/Person"},
 			{"http://example.org/spiderman", "http://xmlns.com/foaf/0.1/name", "Spiderman"},
 			{"http://example.org/spiderman", "http://xmlns.com/foaf/0.1/name", "Человек-паук"},
+		},
+	},
+	"read_rdf_type_shorthand": {
+		data: []byte(`@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+		@prefix rel: <http://www.perceive.net/schemas/relationship/> .
+		
+		<http://example.org/green-goblin>
+			rel:enemyOf <http://example.org/spiderman> ;
+			a foaf:Person ;
+			foaf:name "Green Goblin".`),
+		expectedTokens: []string{
+			"@prefix",
+			"foaf:",
+			"<http://xmlns.com/foaf/0.1/>",
+			".",
+			"@prefix",
+			"rel:",
+			"<http://www.perceive.net/schemas/relationship/>",
+			".",
+			"<http://example.org/green-goblin>",
+			"rel:enemyOf",
+			"<http://example.org/spiderman>",
+			";",
+			"a",
+			"foaf:Person",
+			";",
+			"foaf:name",
+			`"Green Goblin"`,
+			".",
+		},
+		expectedTriples: [][3]string{
+			{"http://example.org/green-goblin", "http://www.perceive.net/schemas/relationship/enemyOf", "http://example.org/spiderman"},
+			{"http://example.org/green-goblin", "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", "http://xmlns.com/foaf/0.1/Person"},
+			{"http://example.org/green-goblin", "http://xmlns.com/foaf/0.1/name", "Green Goblin"},
 		},
 	},
 }
