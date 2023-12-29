@@ -14,7 +14,26 @@ const (
 	object
 )
 
-// Unmarshal TODO comment
+var (
+	// ErrNoPointerValue is returned by Unmarshal function when the passed value is not a pointer
+	ErrNoPointerValue = errors.New("value not a pointer")
+	// ErrNilValue is returned by Unmarshal function when the passed value is nil
+	ErrNilValue = errors.New("value is nil")
+)
+
+// Unmarshal parses Turtle data. It accepts a byte slice of
+// the turtle data and also a target as a pointer to a
+// struct or to a slice/array of structs that have fields
+// annotated by tags turtle defining which field of the
+// struct corresponds to which part of the RDF triple.
+//
+// The function accepts the compact version of Turtle
+// just as the N-triples version of the format where each
+// row corresponds to a single triple. It reads @base
+// and @prefix forms and extends the IRIs that are filled
+// in the target structure with them. It ignores Turtle
+// comments, labels and data types. The keyword a gets
+// replaced by http://www.w3.org/1999/02/22-rdf-syntax-ns#type IRI.
 func Unmarshal(data []byte, v interface{}) error {
 	if v == nil {
 		return ErrNilValue

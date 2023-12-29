@@ -5,20 +5,33 @@ import (
 	"sort"
 )
 
-type Graph map[string]map[string][]string
+// Graph serves as a buffer that consumes triples one by one
+// and can return a byte slice containing Turtle data of all
+// triples consumed.
+type Graph struct {
+	m map[string]map[string][]string
+}
 
-func (g Graph) Accept(t [3]string) error {
-	if g == nil {
+// New returns a pointer to a new intance of graph.Graph
+func New() *Graph {
+	return &Graph{
+		m: make(map[string]map[string][]string),
+	}
+}
+
+// Accept stores a new triple to the graph.
+func (g *Graph) Accept(t [3]string) error {
+	if g == nil || g.m == nil {
 		return nil
 	}
 
-	predicates, ok := g[t[0]]
+	predicates, ok := g.m[t[0]]
 	if !ok {
 		o := make([]string, 0, 1)
 		o = append(o, t[2])
 		p := make(map[string][]string)
 		p[t[1]] = o
-		g[t[0]] = p
+		g.m[t[0]] = p
 		return nil
 	}
 
@@ -26,12 +39,12 @@ func (g Graph) Accept(t [3]string) error {
 	if !ok {
 		o := make([]string, 0, 1)
 		o = append(o, t[2])
-		g[t[0]][t[1]] = o
+		g.m[t[0]][t[1]] = o
 		return nil
 	}
 
 	if !contains(objects, t[2]) {
-		g[t[0]][t[1]] = append(g[t[0]][t[1]], t[2])
+		g.m[t[0]][t[1]] = append(g.m[t[0]][t[1]], t[2])
 	}
 
 	return nil
@@ -47,23 +60,26 @@ func contains(objects []string, s string) bool {
 	return false
 }
 
-func (g Graph) Bytes() ([]byte, error) {
-	if g == nil {
+// Bytes returns the so far consumed triples as a byte slice of
+// Turle data. The triples in the byte slice are sorted first
+// by subject, then by predicates, then by objects alphabetically.
+func (g *Graph) Bytes() ([]byte, error) {
+	if g == nil || g.m == nil {
 		return nil, nil
 	}
 
 	var b []byte
 
-	subjects := g.sortSubjects()
+	subjects := sortSubjects(g)
 	for _, subject := range subjects {
 		b = append(b, []byte(fmt.Sprintf("<%s> ", subject))...)
 
-		predicates := sortPredicates(g[subject])
+		predicates := sortPredicates(g.m[subject])
 
 		var predicateCounter int
 		for _, predicate := range predicates {
 			predicateCounter++
-			objects := g[subject][predicate]
+			objects := g.m[subject][predicate]
 			sort.Slice(objects, func(i, j int) bool {
 				return objects[i] < objects[j]
 			})
@@ -97,7 +113,6 @@ func (g Graph) Bytes() ([]byte, error) {
 
 func writeObjects(b *[]byte, objects []string) {
 	for i, object := range objects {
-		// TODO literals are not printed with <>
 		*b = append(*b, []byte(fmt.Sprintf("<%s>", object))...)
 		// when single object for predicate
 		if len(objects) == 1 {
@@ -112,9 +127,12 @@ func writeObjects(b *[]byte, objects []string) {
 	}
 }
 
-func (g Graph) sortSubjects() []string {
-	sortedSubjects := make(sort.StringSlice, 0, len(g))
-	for subject := range g {
+func sortSubjects(g *Graph) []string {
+	if g == nil || g.m == nil {
+		return nil
+	}
+	sortedSubjects := make(sort.StringSlice, 0, len(g.m))
+	for subject := range g.m {
 		sortedSubjects = append(sortedSubjects, subject)
 	}
 	sort.Sort(sortedSubjects)
