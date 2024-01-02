@@ -181,6 +181,7 @@ func scanTurtle(data []byte, atEOF bool) (advance int, token []byte, err error) 
 	// scan until space, marking end of word
 	var literal bool
 	var iri bool
+	var previous rune
 	for width, i := 0, start; i < len(data); i += width {
 		var r rune
 		r, width = utf8.DecodeRune(data[i:])
@@ -199,13 +200,17 @@ func scanTurtle(data []byte, atEOF bool) (advance int, token []byte, err error) 
 			return i, data[start:i], nil
 		}
 
-		if r == '\u0022' { // "
+		// if bumbed into quote and not escaped, switch the literal state
+		if r == '\u0022' && previous != '\u005C' { // "
 			literal = !literal
 		}
 
-		if r == '\u003C' || r == '\u003E' { // < >
+		// if bumbed into the border of IRI and not in literal, switch the IRI state
+		if (r == '\u003C' || r == '\u003E') && !literal { // < >
 			iri = !iri
 		}
+
+		previous = r
 	}
 
 	// if we're at EOF, we have a final, non-empty, non-terminated word

@@ -372,6 +372,45 @@ var scanTestCases = map[string]struct {
 			{"http://example.org/green-goblin", "http://xmlns.com/foaf/0.1/name", "Green Goblin"},
 		},
 	},
+	"mind_escaped_quote_in_literal": {
+		data: []byte(`@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+		
+		<http://example.org/green-goblin> foaf:name "Weird Name With \" in it" .`),
+		expectedTokens: []string{
+			"@prefix",
+			"foaf:",
+			"<http://xmlns.com/foaf/0.1/>",
+			".",
+			"<http://example.org/green-goblin>",
+			"foaf:name",
+			`"Weird Name With \" in it"`,
+			".",
+		},
+		expectedTriples: [][3]string{
+			{"http://example.org/green-goblin", "http://xmlns.com/foaf/0.1/name", `Weird Name With \" in it`},
+		},
+	},
+	"mind_gt_lt_in_literal": {
+		data: []byte(`@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+		
+		<http://example.org/green-goblin> foaf:name "Weird Name With < and > and < in it", <http://example.org/some-iri> .`),
+		expectedTokens: []string{
+			"@prefix",
+			"foaf:",
+			"<http://xmlns.com/foaf/0.1/>",
+			".",
+			"<http://example.org/green-goblin>",
+			"foaf:name",
+			`"Weird Name With < and > and < in it"`,
+			",",
+			`<http://example.org/some-iri>`,
+			".",
+		},
+		expectedTriples: [][3]string{
+			{"http://example.org/green-goblin", "http://xmlns.com/foaf/0.1/name", `Weird Name With < and > and < in it`},
+			{"http://example.org/green-goblin", "http://xmlns.com/foaf/0.1/name", "http://example.org/some-iri"},
+		},
+	},
 }
 
 func TestScanTurtle(t *testing.T) {
