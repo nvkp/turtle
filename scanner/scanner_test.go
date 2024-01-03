@@ -372,10 +372,10 @@ var scanTestCases = map[string]struct {
 			{"http://example.org/green-goblin", "http://xmlns.com/foaf/0.1/name", "Green Goblin"},
 		},
 	},
-	"mind_escaped_quote_in_literal": {
+	"apostrophe_literal": {
 		data: []byte(`@prefix foaf: <http://xmlns.com/foaf/0.1/> .
 		
-		<http://example.org/green-goblin> foaf:name "Weird Name With \" in it" .`),
+		<http://example.org/green-goblin> foaf:name 'Weird Name With " in it' .`),
 		expectedTokens: []string{
 			"@prefix",
 			"foaf:",
@@ -383,11 +383,29 @@ var scanTestCases = map[string]struct {
 			".",
 			"<http://example.org/green-goblin>",
 			"foaf:name",
-			`"Weird Name With \" in it"`,
+			`'Weird Name With " in it'`,
 			".",
 		},
 		expectedTriples: [][3]string{
-			{"http://example.org/green-goblin", "http://xmlns.com/foaf/0.1/name", `Weird Name With \" in it`},
+			{"http://example.org/green-goblin", "http://xmlns.com/foaf/0.1/name", `Weird Name With " in it`},
+		},
+	},
+	"apostrophe_in_quotation_mark_literal": {
+		data: []byte(`@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+		
+		<http://example.org/green-goblin> foaf:name "Weird Name With ' in it" .`),
+		expectedTokens: []string{
+			"@prefix",
+			"foaf:",
+			"<http://xmlns.com/foaf/0.1/>",
+			".",
+			"<http://example.org/green-goblin>",
+			"foaf:name",
+			`"Weird Name With ' in it"`,
+			".",
+		},
+		expectedTriples: [][3]string{
+			{"http://example.org/green-goblin", "http://xmlns.com/foaf/0.1/name", `Weird Name With ' in it`},
 		},
 	},
 	"mind_gt_lt_in_literal": {
