@@ -138,7 +138,7 @@ func (s *Scanner) Next() bool {
 			token = rdfTypeIRI
 		}
 
-		triple[index] = strings.Trim(token, "<>\"")
+		triple[index] = strings.Trim(token, "<>\"'")
 		index++
 
 		if index > 2 {
@@ -180,8 +180,9 @@ func scanTurtle(data []byte, atEOF bool) (advance int, token []byte, err error) 
 
 	// scan until space, marking end of word
 	var literal bool
+	var apostrophe bool
+	var quotationMark bool
 	var iri bool
-	var previous rune
 	for width, i := 0, start; i < len(data); i += width {
 		var r rune
 		r, width = utf8.DecodeRune(data[i:])
@@ -200,17 +201,24 @@ func scanTurtle(data []byte, atEOF bool) (advance int, token []byte, err error) 
 			return i, data[start:i], nil
 		}
 
-		// if bumbed into quote and not escaped, switch the literal state
-		if r == '\u0022' && previous != '\u005C' { // "
+		// if bumbed into quotation mark and not in apostrophe literal,
+		// switch the literal and quotation mark state
+		if r == '\u0022' && !apostrophe { // "
 			literal = !literal
+			quotationMark = !quotationMark
+		}
+
+		// if bumbed into apostrophe and not in quotation mark literal,
+		// switch the literal state and quotation mark state
+		if r == '\u0027' && !quotationMark { // '
+			literal = !literal
+			apostrophe = !apostrophe
 		}
 
 		// if bumbed into the border of IRI and not in literal, switch the IRI state
 		if (r == '\u003C' || r == '\u003E') && !literal { // < >
 			iri = !iri
 		}
-
-		previous = r
 	}
 
 	// if we're at EOF, we have a final, non-empty, non-terminated word
