@@ -10,6 +10,19 @@ import (
 	"unicode/utf8"
 )
 
+const (
+	runeNumber      = '\u0023' // #
+	runeNewLine     = '\u000A' // \n
+	runeSemicolon   = '\u003B' // ;
+	runeComma       = '\u002C' // ,
+	runeFullStop    = '\u002E' // .
+	runeQuotation   = '\u0022' // "
+	runeApostrophe  = '\u0027' // '
+	runeLessThan    = '\u003C' // <
+	runeGreaterThan = '\u003E' // >
+	runeBackslash   = '\u005C' // \
+)
+
 const rdfTypeIRI = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
 
 var (
@@ -163,12 +176,12 @@ func scanTurtle(data []byte, atEOF bool) (advance int, token []byte, err error) 
 
 		// a section denoted by letter # up until the new line character
 		// is considered a leading space as well
-		if r == '\u0023' && !comment { // #
+		if r == runeNumber && !comment { // #
 			comment = true
 			continue
 		}
 
-		if r == '\u000A' && comment { // \n
+		if r == runeNewLine && comment { // \n
 			comment = false
 			continue
 		}
@@ -183,16 +196,30 @@ func scanTurtle(data []byte, atEOF bool) (advance int, token []byte, err error) 
 	var apostrophe bool
 	var quotationMark bool
 	var iri bool
+	var runeBuffer []rune
+	var inMultiLineLiteral bool
 	for width, i := 0, start; i < len(data); i += width {
 		var r rune
 		r, width = utf8.DecodeRune(data[i:])
+
+		// add rune to rune buffer
+		runeBuffer = appendRuneToBuffer(r, runeBuffer)
+
+		multilineLiteralEdge := bufferContainsLiterals(runeBuffer)
+		escaped := escapedCharacter(runeBuffer)
+		// if the last characters were literals, switch the multiline
+		// literal and literal state
+		if multilineLiteralEdge {
+			inMultiLineLiteral = !inMultiLineLiteral
+			literal = !literal
+		}
 
 		// if we bump to space character, we return the word, unless there is a literal started
 		if unicode.IsSpace(r) && !literal {
 			return i + width, data[start:i], nil
 		}
 
-		if (r == '\u003B' || r == '\u002C' || r == '\u002E') && !iri && !literal { // ; , .
+		if (r == runeSemicolon || r == runeComma || r == runeFullStop) && !iri && !literal { // ; , .
 			// if it is first character, we return it as the word
 			if i == 0 {
 				return i + width, data[start : i+width], nil
@@ -203,20 +230,20 @@ func scanTurtle(data []byte, atEOF bool) (advance int, token []byte, err error) 
 
 		// if bumbed into quotation mark and not in apostrophe literal,
 		// switch the literal and quotation mark state
-		if r == '\u0022' && !apostrophe { // "
+		if r == runeQuotation && !apostrophe && !inMultiLineLiteral && !multilineLiteralEdge && !escaped { // "
 			literal = !literal
 			quotationMark = !quotationMark
 		}
 
 		// if bumbed into apostrophe and not in quotation mark literal,
 		// switch the literal state and quotation mark state
-		if r == '\u0027' && !quotationMark { // '
+		if r == runeApostrophe && !quotationMark && !inMultiLineLiteral && !multilineLiteralEdge && !escaped { // '
 			literal = !literal
 			apostrophe = !apostrophe
 		}
 
 		// if bumbed into the border of IRI and not in literal, switch the IRI state
-		if (r == '\u003C' || r == '\u003E') && !literal { // < >
+		if (r == runeLessThan || r == runeGreaterThan) && !literal { // < >
 			iri = !iri
 		}
 	}
