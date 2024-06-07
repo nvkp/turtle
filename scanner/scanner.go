@@ -78,7 +78,8 @@ func (s *Scanner) Next() bool {
 
 			value := strings.Trim(s.s.Text(), "<>")
 
-			if !strings.HasSuffix(value, "/") {
+			// make the prefix appendable
+			if !strings.HasSuffix(value, "/") && !strings.HasSuffix(value, "#") {
 				value = fmt.Sprintf("%s/", value)
 			}
 
@@ -94,7 +95,8 @@ func (s *Scanner) Next() bool {
 
 			base := strings.Trim(s.s.Text(), "<>")
 
-			if !strings.HasSuffix(base, "/") {
+			// make the base appendable
+			if !strings.HasSuffix(base, "/") && !strings.HasSuffix(base, "#") {
 				base = fmt.Sprintf("%s/", base)
 			}
 
