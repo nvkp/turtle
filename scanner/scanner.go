@@ -6,61 +6,78 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-	"unicode"
-	"unicode/utf8"
 )
 
-const (
-	runeNumber      = '\u0023' // #
-	runeNewLine     = '\u000A' // \n
-	runeSemicolon   = '\u003B' // ;
-	runeComma       = '\u002C' // ,
-	runeFullStop    = '\u002E' // .
-	runeQuotation   = '\u0022' // "
-	runeApostrophe  = '\u0027' // '
-	runeLessThan    = '\u003C' // <
-	runeGreaterThan = '\u003E' // >
-	runeBackslash   = '\u005C' // \
-)
+var regexBlankNode = regexp.MustCompile(`_:.+`)
 
-const rdfTypeIRI = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-
-var (
-	regexDataType = regexp.MustCompile(`(\".+\")\^\^.+`)
-	regexLabel    = regexp.MustCompile(`(\".+\")@.+`)
-)
+const nilString = "nil"
 
 // Scanner uses bufio.Scanner to parse the provided byte slice word by word.
 // It keeps information about prefixes and base of the provided graph and
 // the next triple to be read.
 type Scanner struct {
-	s        *bufio.Scanner
-	t        [3]string
-	prefixes map[string]string
-	base     string
+	t                [][3]string
+	data             []byte
+	scanByteCounter  *ScanByteCounter
+	s                *bufio.Scanner
+	base             string
+	prefixes         map[string]string
+	blankNodes       map[string]struct{}
+	blankNodeCounter int
+	curSubject       string
+	curPredicate     string
+	curIndex         int
+	blankNodeLists   []blankNodeList
+}
+
+type blankNodeList struct {
+	startIndex   int
+	curIndex     int
+	curSubject   string
+	curPredicate string
+	blankNode    string
 }
 
 // New accepts a byte slice of the Turtle data and returns a new scanner.Scanner.
 func New(data []byte) *Scanner {
+	counter := &ScanByteCounter{}
 	s := bufio.NewScanner(bytes.NewReader(data))
-	s.Split(scanTurtle)
+	s.Split(counter.SplitFunc())
+
 	return &Scanner{
-		s:        s,
-		prefixes: make(map[string]string),
+		data:            data,
+		scanByteCounter: counter,
+		s:               s,
+		t:               make([][3]string, 0),
+		prefixes:        make(map[string]string),
+		blankNodes:      make(map[string]struct{}),
+		blankNodeLists:  make([]blankNodeList, 0),
 	}
 }
 
-// Next tries to extract a next triple from the provided data, when succesful it
-// stores the new triple and returns true. If not it returns false. Another calls
-// to Next would also return false.
+// Next tries to extract a next triple or multiple triples from the provided
+// data, when succesful it stores the new triples and returns true. If not
+// it returns false. Another calls to Next would also return false.
 func (s *Scanner) Next() bool {
-	var index int
-	var triple [3]string
+	// shift the "pointer" of the triple slice
+	if len(s.t) > 0 {
+		s.t = s.t[1:]
+	}
 
+	// if there is still a triple left, return true
+	if len(s.t) > 0 {
+		return true
+	}
+
+	// otherwise look for next triples
 	for {
+		//beforeI := s.scanByteCounter.BytesRead
 		if ok := s.s.Scan(); !ok {
 			return false
 		}
+
+		i := s.scanByteCounter.BytesRead
+
 		token := s.s.Text()
 
 		// if bumped into a prefix form, extract and store the prefix and its value
@@ -106,16 +123,13 @@ func (s *Scanner) Next() bool {
 
 		// multiple predicates of a single subject
 		if token == ";" {
-			triple[0] = s.t[0] // reuse subject
-			index = 1
+			s.curIndex = 1
 			continue
 		}
 
 		// multiple objects of a single predicate
 		if token == "," {
-			triple[0] = s.t[0] // reuse subject
-			triple[1] = s.t[1] // reuse predicate
-			index = 2
+			s.curIndex = 2
 			continue
 		}
 
@@ -124,137 +138,133 @@ func (s *Scanner) Next() bool {
 			continue
 		}
 
-		// apply the stored prefixes
-		for prefix, value := range s.prefixes {
-			if !strings.HasPrefix(token, fmt.Sprintf("%s:", prefix)) {
-				continue
+		// beginning of a blank node list
+		if token == "[" {
+			blankNode := s.newBlankNode()
+			s.blankNodeLists = append(s.blankNodeLists, blankNodeList{
+				curSubject:   s.curSubject,
+				curPredicate: s.curPredicate,
+				curIndex:     s.curIndex,
+				startIndex:   i,
+				blankNode:    blankNode,
+			})
+			s.curSubject = blankNode
+			s.curIndex = 1
+			continue
+		}
+
+		// ending of a blank node list
+		if token == "]" {
+			list := s.blankNodeLists[len(s.blankNodeLists)-1]
+			s.blankNodeLists = s.blankNodeLists[:len(s.blankNodeLists)-1]
+			newData := make([]byte, 0)
+			newData = append(newData, []byte(list.blankNode)...)
+			newData = append(newData, s.data[i:]...)
+			s.data = newData
+			reader := bytes.NewReader(s.data)
+			s.s = bufio.NewScanner(reader)
+			s.scanByteCounter = &ScanByteCounter{}
+			s.s.Split(s.scanByteCounter.SplitFunc())
+			s.curSubject = list.curSubject
+			s.curPredicate = list.curPredicate
+			s.curIndex = list.curIndex
+			continue
+		}
+
+		// TODO has to be recursive to cover nested collections
+
+		// beginning of a collection
+		if token == "(" {
+			items := make([]string, 0)
+			blankNodes := make([]string, 0)
+			for {
+				if ok := s.s.Scan(); !ok {
+					return false
+				}
+				token = s.s.Text()
+				if token == ")" {
+					break
+				}
+				items = append(items, s.sanitize(token))
+				blankNodes = append(blankNodes, s.newBlankNode())
 			}
-			i := strings.IndexAny(token, ":")
-			token = fmt.Sprintf("%s%s", value, token[i+1:])
+
+			for i, item := range items {
+				// rdf first
+				s.t = append(s.t, [3]string{blankNodes[i], rdfFirst, item})
+				// rdf rest
+				rest := nilString
+				if i < len(blankNodes)-1 {
+					rest = blankNodes[i+1]
+				}
+				s.t = append(s.t, [3]string{blankNodes[i], rdfRest, rest})
+			}
+
+			collectionStart := nilString
+			if len(items) > 0 {
+				collectionStart = blankNodes[0]
+			}
+
+			if s.curIndex == 2 {
+				s.t = append(s.t, [3]string{s.curSubject, s.curPredicate, collectionStart})
+				return true
+			}
+
+			if s.curIndex == 0 {
+				token = collectionStart
+			}
 		}
 
-		// apply the stored base
-		if strings.HasPrefix(token, "<#") {
-			token = fmt.Sprintf("%s%s", s.base, token[2:])
+		token = s.sanitize(token)
+
+		// record blank node
+		if regexBlankNode.MatchString(token) {
+			s.blankNodes[token] = struct{}{}
 		}
 
-		// remove data type suffix
-		if regexDataType.MatchString(token) {
-			token = regexDataType.ReplaceAllString(token, `$1`)
+		// handle subject
+		if s.curIndex == 0 {
+			s.curSubject = token
+			s.curIndex++
+			continue
 		}
 
-		// remove label
-		if regexLabel.MatchString(token) {
-			token = regexLabel.ReplaceAllString(token, `$1`)
+		// handle predicate
+		if s.curIndex == 1 {
+			s.curPredicate = token
+			s.curIndex++
+			continue
 		}
 
-		// replace "a" keyword with rdf:type predicate
-		if token == "a" {
-			token = rdfTypeIRI
-		}
-
-		triple[index] = strings.Trim(token, "<>\"'")
-		index++
-
-		if index > 2 {
-			s.t = triple
+		// handle object
+		if s.curIndex == 2 {
+			s.t = append(s.t, [3]string{s.curSubject, s.curPredicate, token})
+			s.curIndex = 0
 			return true
 		}
 	}
 }
 
-// Triple returns the currently stored triple.
+// Triple returns the next triple
 func (s *Scanner) Triple() [3]string {
-	return s.t
+	if len(s.t) == 0 {
+		return [3]string{}
+	}
+	return s.t[0]
 }
 
-func scanTurtle(data []byte, atEOF bool) (advance int, token []byte, err error) {
-	// skip leading spaces
-	start := 0
-	var comment bool
-	for width := 0; start < len(data); start += width {
-		var r rune
-		r, width = utf8.DecodeRune(data[start:])
-
-		// a section denoted by letter # up until the new line character
-		// is considered a leading space as well
-		if r == runeNumber && !comment { // #
-			comment = true
+// newBlankNode emits a new blank node based on what is the
+// blank node ID counter and what blank node have already
+// been recorded in the dataset to avoid collisions
+func (s *Scanner) newBlankNode() string {
+	for {
+		blankNode := fmt.Sprintf("_:b%d", s.blankNodeCounter)
+		s.blankNodeCounter = s.blankNodeCounter + 1
+		if _, ok := s.blankNodes[blankNode]; ok {
 			continue
 		}
 
-		if r == runeNewLine && comment { // \n
-			comment = false
-			continue
-		}
-
-		if !comment && !unicode.IsSpace(r) {
-			break
-		}
+		s.blankNodes[blankNode] = struct{}{}
+		return blankNode
 	}
-
-	// scan until space, marking end of word
-	var literal bool
-	var apostrophe bool
-	var quotationMark bool
-	var iri bool
-	var runeBuffer []rune
-	var inMultiLineLiteral bool
-	for width, i := 0, start; i < len(data); i += width {
-		var r rune
-		r, width = utf8.DecodeRune(data[i:])
-
-		// add rune to rune buffer
-		runeBuffer = appendRuneToBuffer(r, runeBuffer)
-
-		multilineLiteralEdge := bufferContainsLiterals(runeBuffer)
-		escaped := escapedCharacter(runeBuffer)
-		// if the last characters were literals, switch the multiline
-		// literal and literal state
-		if multilineLiteralEdge {
-			inMultiLineLiteral = !inMultiLineLiteral
-			literal = !literal
-		}
-
-		// if we bump to space character, we return the word, unless there is a literal started
-		if unicode.IsSpace(r) && !literal {
-			return i + width, data[start:i], nil
-		}
-
-		if (r == runeSemicolon || r == runeComma || r == runeFullStop) && !iri && !literal { // ; , .
-			// if it is first character, we return it as the word
-			if i == 0 {
-				return i + width, data[start : i+width], nil
-			}
-			// otherwise we return what is before as the word
-			return i, data[start:i], nil
-		}
-
-		// if bumbed into quotation mark and not in apostrophe literal,
-		// switch the literal and quotation mark state
-		if r == runeQuotation && !apostrophe && !inMultiLineLiteral && !multilineLiteralEdge && !escaped { // "
-			literal = !literal
-			quotationMark = !quotationMark
-		}
-
-		// if bumbed into apostrophe and not in quotation mark literal,
-		// switch the literal state and quotation mark state
-		if r == runeApostrophe && !quotationMark && !inMultiLineLiteral && !multilineLiteralEdge && !escaped { // '
-			literal = !literal
-			apostrophe = !apostrophe
-		}
-
-		// if bumbed into the border of IRI and not in literal, switch the IRI state
-		if (r == runeLessThan || r == runeGreaterThan) && !literal { // < >
-			iri = !iri
-		}
-	}
-
-	// if we're at EOF, we have a final, non-empty, non-terminated word
-	if atEOF && len(data) > start {
-		return len(data), data[start:], nil
-	}
-
-	// request more data.
-	return start, nil, nil
 }

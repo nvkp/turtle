@@ -15,12 +15,12 @@ var scanTestCases = map[string]struct {
 }{
 	"spiderman compact": {
 		data: []byte(`<http://example.org/green-goblin>
-					<http://www.perceive.net/schemas/relationship/enemyOf> <http://example.org/spiderman> ;
-					<http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> ;
-					<http://xmlns.com/foaf/0.1/name> "Green Goblin".<http://example.org/spiderman>
-					<http://www.perceive.net/schemas/relationship/enemyOf> <http://example.org/green-goblin>;
-					<http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person>;
-					<http://xmlns.com/foaf/0.1/name> "Spiderman", "Человек-паук" .`),
+						<http://www.perceive.net/schemas/relationship/enemyOf> <http://example.org/spiderman> ;
+						<http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> ;
+						<http://xmlns.com/foaf/0.1/name> "Green Goblin".<http://example.org/spiderman>
+						<http://www.perceive.net/schemas/relationship/enemyOf> <http://example.org/green-goblin>;
+						<http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person>;
+						<http://xmlns.com/foaf/0.1/name> "Spiderman", "Человек-паук" .`),
 		expectedTokens: []string{
 			"<http://example.org/green-goblin>",
 			"<http://www.perceive.net/schemas/relationship/enemyOf>",
@@ -57,9 +57,9 @@ var scanTestCases = map[string]struct {
 	},
 	"ignore_comments": {
 		data: []byte(`<http://example.org/green-goblin>
-					<http://www.perceive.net/schemas/relationship/enemyOf> <http://example.org/spiderman> ;
-					<http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> ; # this is a comment
-					<http://xmlns.com/foaf/0.1/name> "Green Goblin".`),
+						<http://www.perceive.net/schemas/relationship/enemyOf> <http://example.org/spiderman> ;
+						<http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> ; # this is a comment
+						<http://xmlns.com/foaf/0.1/name> "Green Goblin".`),
 		expectedTokens: []string{
 			"<http://example.org/green-goblin>",
 			"<http://www.perceive.net/schemas/relationship/enemyOf>",
@@ -80,9 +80,9 @@ var scanTestCases = map[string]struct {
 	},
 	"ignore_label": {
 		data: []byte(`<http://example.org/green-goblin>
-					<http://www.perceive.net/schemas/relationship/enemyOf> <http://example.org/spiderman> ;
-					<http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> ;
-					<http://xmlns.com/foaf/0.1/name> "Green Goblin"@en .`),
+						<http://www.perceive.net/schemas/relationship/enemyOf> <http://example.org/spiderman> ;
+						<http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> ;
+						<http://xmlns.com/foaf/0.1/name> "Green Goblin"@en .`),
 		expectedTokens: []string{
 			"<http://example.org/green-goblin>",
 			"<http://www.perceive.net/schemas/relationship/enemyOf>",
@@ -103,9 +103,9 @@ var scanTestCases = map[string]struct {
 	},
 	"ignore_prefixed_datatype": {
 		data: []byte(`<http://example.org/green-goblin>
-					<http://www.perceive.net/schemas/relationship/enemyOf> <http://example.org/spiderman> ;
-					<http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> ;
-					<http://xmlns.com/foaf/0.1/name> "Green Goblin"^^xsd:string .`),
+						<http://www.perceive.net/schemas/relationship/enemyOf> <http://example.org/spiderman> ;
+						<http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> ;
+						<http://xmlns.com/foaf/0.1/name> "Green Goblin"^^xsd:string .`),
 		expectedTokens: []string{
 			"<http://example.org/green-goblin>",
 			"<http://www.perceive.net/schemas/relationship/enemyOf>",
@@ -126,8 +126,8 @@ var scanTestCases = map[string]struct {
 	},
 	"booleans": {
 		data: []byte(`@prefix s: <http://example.org/stats/> .
-					<http://somecountry.example/census2007>
-						s:isLandlocked false .`),
+						<http://somecountry.example/census2007>
+							s:isLandlocked false .`),
 		expectedTokens: []string{
 			"@prefix",
 			"s:",
@@ -144,8 +144,8 @@ var scanTestCases = map[string]struct {
 	},
 	"empty_prefix": {
 		data: []byte(`@prefix : <http://example.org/stats/> .
-					<http://somecountry.example/census2007>
-						:isLandlocked false .`),
+						<http://somecountry.example/census2007>
+							:isLandlocked false .`),
 		expectedTokens: []string{
 			"@prefix",
 			":",
@@ -162,8 +162,8 @@ var scanTestCases = map[string]struct {
 	},
 	"prefix_no_ending_slash": {
 		data: []byte(`@prefix : <http://example.org/stats> .
-					<http://somecountry.example/census2007>
-						:isLandlocked false .`),
+						<http://somecountry.example/census2007>
+							:isLandlocked false .`),
 		expectedTokens: []string{
 			"@prefix",
 			":",
@@ -180,8 +180,8 @@ var scanTestCases = map[string]struct {
 	},
 	"base_no_ending_slash": {
 		data: []byte(`@base <http://example.org/stats> .
-					<http://somecountry.example/census2007>
-						<#isLandlocked> false .`),
+						<http://somecountry.example/census2007>
+							<#isLandlocked> false .`),
 		expectedTokens: []string{
 			"@base",
 			"<http://example.org/stats>",
@@ -197,8 +197,8 @@ var scanTestCases = map[string]struct {
 	},
 	"base_with_ending_slash": {
 		data: []byte(`@base <http://example.org/stats/> .
-					<http://somecountry.example/census2007>
-						<#isLandlocked> false .`),
+						<http://somecountry.example/census2007>
+							<#isLandlocked> false .`),
 		expectedTokens: []string{
 			"@base",
 			"<http://example.org/stats/>",
@@ -214,9 +214,9 @@ var scanTestCases = map[string]struct {
 	},
 	"ignore_datatype": {
 		data: []byte(`<http://example.org/green-goblin>
-					<http://www.perceive.net/schemas/relationship/enemyOf> <http://example.org/spiderman> ;
-					<http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> ;
-					<http://xmlns.com/foaf/0.1/name> "Green Goblin"^^<http://www.w3.org/2001/XMLSchema#string> .`),
+						<http://www.perceive.net/schemas/relationship/enemyOf> <http://example.org/spiderman> ;
+						<http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> ;
+						<http://xmlns.com/foaf/0.1/name> "Green Goblin"^^<http://www.w3.org/2001/XMLSchema#string> .`),
 		expectedTokens: []string{
 			"<http://example.org/green-goblin>",
 			"<http://www.perceive.net/schemas/relationship/enemyOf>",
@@ -237,12 +237,12 @@ var scanTestCases = map[string]struct {
 	},
 	"read_prefix": {
 		data: []byte(`@prefix foaf: <http://xmlns.com/foaf/0.1/> .
-					@prefix rel: <http://www.perceive.net/schemas/relationship/> .
+						@prefix rel: <http://www.perceive.net/schemas/relationship/> .
 
-					<http://example.org/green-goblin>
-						rel:enemyOf <http://example.org/spiderman> ;
-						<http://www.w3.org/1999/02/22-rdf-syntax-ns#type> foaf:Person ;
-						foaf:name "Green Goblin".`),
+						<http://example.org/green-goblin>
+							rel:enemyOf <http://example.org/spiderman> ;
+							<http://www.w3.org/1999/02/22-rdf-syntax-ns#type> foaf:Person ;
+							foaf:name "Green Goblin".`),
 		expectedTokens: []string{
 			"@prefix",
 			"foaf:",
@@ -271,13 +271,13 @@ var scanTestCases = map[string]struct {
 	},
 	"read_prefix_and_base": {
 		data: []byte(`@base <http://example.org/> .
-					@prefix foaf: <http://xmlns.com/foaf/0.1/> .
-					@prefix rel: <http://www.perceive.net/schemas/relationship/> .
+						@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+						@prefix rel: <http://www.perceive.net/schemas/relationship/> .
 
-					<#green-goblin>
-						rel:enemyOf <#spiderman> ;
-						<http://www.w3.org/1999/02/22-rdf-syntax-ns#type> foaf:Person ;
-						foaf:name "Green Goblin".`),
+						<#green-goblin>
+							rel:enemyOf <#spiderman> ;
+							<http://www.w3.org/1999/02/22-rdf-syntax-ns#type> foaf:Person ;
+							foaf:name "Green Goblin".`),
 		expectedTokens: []string{
 			"@base",
 			"<http://example.org/>",
@@ -309,12 +309,12 @@ var scanTestCases = map[string]struct {
 	},
 	"spiderman n-triples": {
 		data: []byte(`<http://example.org/green-goblin> <http://www.perceive.net/schemas/relationship/enemyOf> <http://example.org/spiderman> .
-					<http://example.org/green-goblin> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
-					<http://example.org/green-goblin> <http://xmlns.com/foaf/0.1/name> "Green Goblin".
-					<http://example.org/spiderman> <http://www.perceive.net/schemas/relationship/enemyOf> <http://example.org/green-goblin> .
-					<http://example.org/spiderman> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
-					<http://example.org/spiderman> <http://xmlns.com/foaf/0.1/name> "Spiderman" .
-					<http://example.org/spiderman> <http://xmlns.com/foaf/0.1/name> "Человек-паук" .`),
+						<http://example.org/green-goblin> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+						<http://example.org/green-goblin> <http://xmlns.com/foaf/0.1/name> "Green Goblin".
+						<http://example.org/spiderman> <http://www.perceive.net/schemas/relationship/enemyOf> <http://example.org/green-goblin> .
+						<http://example.org/spiderman> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+						<http://example.org/spiderman> <http://xmlns.com/foaf/0.1/name> "Spiderman" .
+						<http://example.org/spiderman> <http://xmlns.com/foaf/0.1/name> "Человек-паук" .`),
 		expectedTokens: []string{
 			"<http://example.org/green-goblin>",
 			"<http://www.perceive.net/schemas/relationship/enemyOf>",
@@ -357,12 +357,12 @@ var scanTestCases = map[string]struct {
 	},
 	"read_rdf_type_shorthand": {
 		data: []byte(`@prefix foaf: <http://xmlns.com/foaf/0.1/> .
-					@prefix rel: <http://www.perceive.net/schemas/relationship/> .
+						@prefix rel: <http://www.perceive.net/schemas/relationship/> .
 
-					<http://example.org/green-goblin>
-						rel:enemyOf <http://example.org/spiderman> ;
-						a foaf:Person ;
-						foaf:name "Green Goblin".`),
+						<http://example.org/green-goblin>
+							rel:enemyOf <http://example.org/spiderman> ;
+							a foaf:Person ;
+							foaf:name "Green Goblin".`),
 		expectedTokens: []string{
 			"@prefix",
 			"foaf:",
@@ -392,7 +392,7 @@ var scanTestCases = map[string]struct {
 	"apostrophe_literal": {
 		data: []byte(`@prefix foaf: <http://xmlns.com/foaf/0.1/> .
 
-					<http://example.org/green-goblin> foaf:name 'Weird Name With " in it' .`),
+						<http://example.org/green-goblin> foaf:name 'Weird Name With " in it' .`),
 		expectedTokens: []string{
 			"@prefix",
 			"foaf:",
@@ -410,7 +410,7 @@ var scanTestCases = map[string]struct {
 	"apostrophe_in_quotation_mark_literal": {
 		data: []byte(`@prefix foaf: <http://xmlns.com/foaf/0.1/> .
 
-					<http://example.org/green-goblin> foaf:name "Weird Name With ' in it" .`),
+						<http://example.org/green-goblin> foaf:name "Weird Name With ' in it" .`),
 		expectedTokens: []string{
 			"@prefix",
 			"foaf:",
@@ -428,7 +428,7 @@ var scanTestCases = map[string]struct {
 	"mind_gt_lt_in_literal": {
 		data: []byte(`@prefix foaf: <http://xmlns.com/foaf/0.1/> .
 
-					<http://example.org/green-goblin> foaf:name "Weird Name With < and > and < in it", <http://example.org/some-iri> .`),
+						<http://example.org/green-goblin> foaf:name "Weird Name With < and > and < in it", <http://example.org/some-iri> .`),
 		expectedTokens: []string{
 			"@prefix",
 			"foaf:",
@@ -448,68 +448,14 @@ var scanTestCases = map[string]struct {
 	},
 	"quation-mark-multiline-literal": {
 		data: []byte(`@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-				@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-				@prefix schema: <https://schema.org/> .
-
-				schema:ComicSeries a rdfs:Class ;
-					rdfs:label "ComicSeries" ;
-					rdfs:comment """A sequential publication of comic stories under a
-		unifying title, for example "The Amazing Spider-Man" or "Groo the
-		Wanderer".""" ;
-					rdfs:subClassOf schema:Periodical ;
-					schema:isPartOf <https://bib.schema.org> .`),
-		expectedTokens: []string{
-			`@prefix`,
-			`rdf:`,
-			`<http://www.w3.org/1999/02/22-rdf-syntax-ns#>`,
-			`.`,
-			`@prefix`,
-			`rdfs:`,
-			`<http://www.w3.org/2000/01/rdf-schema#>`,
-			`.`,
-			`@prefix`,
-			`schema:`,
-			`<https://schema.org/>`,
-			`.`,
-			`schema:ComicSeries`,
-			`a`,
-			`rdfs:Class`,
-			`;`,
-			`rdfs:label`,
-			`"ComicSeries"`,
-			`;`,
-			`rdfs:comment`,
-			`"""A sequential publication of comic stories under a
-		unifying title, for example "The Amazing Spider-Man" or "Groo the
-		Wanderer"."""`,
-			`;`,
-			`rdfs:subClassOf`,
-			`schema:Periodical`,
-			`;`,
-			`schema:isPartOf`,
-			`<https://bib.schema.org>`,
-			`.`,
-		},
-		expectedTriples: [][3]string{
-			{"https://schema.org/ComicSeries", "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", "http://www.w3.org/2000/01/rdf-schema#Class"},
-			{"https://schema.org/ComicSeries", "http://www.w3.org/2000/01/rdf-schema#label", "ComicSeries"},
-			{"https://schema.org/ComicSeries", "http://www.w3.org/2000/01/rdf-schema#comment", `A sequential publication of comic stories under a
-		unifying title, for example "The Amazing Spider-Man" or "Groo the
-		Wanderer".`},
-			{"https://schema.org/ComicSeries", "http://www.w3.org/2000/01/rdf-schema#subClassOf", "https://schema.org/Periodical"},
-			{"https://schema.org/ComicSeries", "https://schema.org/isPartOf", "https://bib.schema.org"},
-		},
-	},
-	"apostrophe-multiline-literal": {
-		data: []byte(`@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 					@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 					@prefix schema: <https://schema.org/> .
 
 					schema:ComicSeries a rdfs:Class ;
 						rdfs:label "ComicSeries" ;
-						rdfs:comment '''A sequential publication of comic stories under a
+						rdfs:comment """A sequential publication of comic stories under a
 			unifying title, for example "The Amazing Spider-Man" or "Groo the
-			Wanderer".''' ;
+			Wanderer".""" ;
 						rdfs:subClassOf schema:Periodical ;
 						schema:isPartOf <https://bib.schema.org> .`),
 		expectedTokens: []string{
@@ -533,9 +479,9 @@ var scanTestCases = map[string]struct {
 			`"ComicSeries"`,
 			`;`,
 			`rdfs:comment`,
-			`'''A sequential publication of comic stories under a
+			`"""A sequential publication of comic stories under a
 			unifying title, for example "The Amazing Spider-Man" or "Groo the
-			Wanderer".'''`,
+			Wanderer"."""`,
 			`;`,
 			`rdfs:subClassOf`,
 			`schema:Periodical`,
@@ -554,15 +500,69 @@ var scanTestCases = map[string]struct {
 			{"https://schema.org/ComicSeries", "https://schema.org/isPartOf", "https://bib.schema.org"},
 		},
 	},
+	"apostrophe-multiline-literal": {
+		data: []byte(`@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+						@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+						@prefix schema: <https://schema.org/> .
+
+						schema:ComicSeries a rdfs:Class ;
+							rdfs:label "ComicSeries" ;
+							rdfs:comment '''A sequential publication of comic stories under a
+				unifying title, for example "The Amazing Spider-Man" or "Groo the
+				Wanderer".''' ;
+							rdfs:subClassOf schema:Periodical ;
+							schema:isPartOf <https://bib.schema.org> .`),
+		expectedTokens: []string{
+			`@prefix`,
+			`rdf:`,
+			`<http://www.w3.org/1999/02/22-rdf-syntax-ns#>`,
+			`.`,
+			`@prefix`,
+			`rdfs:`,
+			`<http://www.w3.org/2000/01/rdf-schema#>`,
+			`.`,
+			`@prefix`,
+			`schema:`,
+			`<https://schema.org/>`,
+			`.`,
+			`schema:ComicSeries`,
+			`a`,
+			`rdfs:Class`,
+			`;`,
+			`rdfs:label`,
+			`"ComicSeries"`,
+			`;`,
+			`rdfs:comment`,
+			`'''A sequential publication of comic stories under a
+				unifying title, for example "The Amazing Spider-Man" or "Groo the
+				Wanderer".'''`,
+			`;`,
+			`rdfs:subClassOf`,
+			`schema:Periodical`,
+			`;`,
+			`schema:isPartOf`,
+			`<https://bib.schema.org>`,
+			`.`,
+		},
+		expectedTriples: [][3]string{
+			{"https://schema.org/ComicSeries", "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", "http://www.w3.org/2000/01/rdf-schema#Class"},
+			{"https://schema.org/ComicSeries", "http://www.w3.org/2000/01/rdf-schema#label", "ComicSeries"},
+			{"https://schema.org/ComicSeries", "http://www.w3.org/2000/01/rdf-schema#comment", `A sequential publication of comic stories under a
+				unifying title, for example "The Amazing Spider-Man" or "Groo the
+				Wanderer".`},
+			{"https://schema.org/ComicSeries", "http://www.w3.org/2000/01/rdf-schema#subClassOf", "https://schema.org/Periodical"},
+			{"https://schema.org/ComicSeries", "https://schema.org/isPartOf", "https://bib.schema.org"},
+		},
+	},
 	"escaped-quation": {
 		data: []byte(`
-				@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-				@prefix schema: <https://schema.org/> .
-				schema:FAQPage a rdfs:Class ;
-		rdfs:label "FAQPage" ;
-		rdfs:comment "A [[FAQPage]] is a [[WebPage]] presenting one or more \"[Frequently asked questions](https://en.wikipedia.org/wiki/FAQ)\" (see also [[QAPage]])." ;
-		rdfs:subClassOf schema:WebPage ;
-		schema:source <https://github.com/schemaorg/schemaorg/issues/1723> .`),
+					@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+					@prefix schema: <https://schema.org/> .
+					schema:FAQPage a rdfs:Class ;
+			rdfs:label "FAQPage" ;
+			rdfs:comment "A [[FAQPage]] is a [[WebPage]] presenting one or more \"[Frequently asked questions](https://en.wikipedia.org/wiki/FAQ)\" (see also [[QAPage]])." ;
+			rdfs:subClassOf schema:WebPage ;
+			schema:source <https://github.com/schemaorg/schemaorg/issues/1723> .`),
 		expectedTokens: []string{
 			`@prefix`,
 			`rdfs:`,
@@ -599,13 +599,13 @@ var scanTestCases = map[string]struct {
 	},
 	"escaped-apostrophe": {
 		data: []byte(`
-			@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-			@prefix schema: <https://schema.org/> .
-			schema:FAQPage a rdfs:Class ;
-	rdfs:label "FAQPage" ;
-	rdfs:comment 'A [[FAQPage]] is a [[WebPage]] presenting one or more \'[Frequently asked questions](https://en.wikipedia.org/wiki/FAQ)\' (see also [[QAPage]]).' ;
-	rdfs:subClassOf schema:WebPage ;
-	schema:source <https://github.com/schemaorg/schemaorg/issues/1723> .`),
+				@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+				@prefix schema: <https://schema.org/> .
+				schema:FAQPage a rdfs:Class ;
+		rdfs:label "FAQPage" ;
+		rdfs:comment 'A [[FAQPage]] is a [[WebPage]] presenting one or more \'[Frequently asked questions](https://en.wikipedia.org/wiki/FAQ)\' (see also [[QAPage]]).' ;
+		rdfs:subClassOf schema:WebPage ;
+		schema:source <https://github.com/schemaorg/schemaorg/issues/1723> .`),
 		expectedTokens: []string{
 			`@prefix`,
 			`rdfs:`,
@@ -642,8 +642,8 @@ var scanTestCases = map[string]struct {
 	},
 	"base_with_number_sign": {
 		data: []byte(`@base <http://example.org/stats#> .
-					<http://somecountry.example/census2007>
-						<#isLandlocked> false .`),
+						<http://somecountry.example/census2007>
+							<#isLandlocked> false .`),
 		expectedTokens: []string{
 			"@base",
 			"<http://example.org/stats#>",
@@ -659,20 +659,20 @@ var scanTestCases = map[string]struct {
 	},
 	"prefix_with_number_sign": {
 		data: []byte(`
-@prefix dcterms: <http://purl.org/dc/terms/> .
-@prefix owl: <http://www.w3.org/2002/07/owl#> .
-@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-@prefix schema: <https://schema.org/> .
+	@prefix dcterms: <http://purl.org/dc/terms/> .
+	@prefix owl: <http://www.w3.org/2002/07/owl#> .
+	@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+	@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+	@prefix schema: <https://schema.org/> .
 
-schema:identifier a rdf:Property ;
-    rdfs:label "identifier" ;
-    owl:equivalentProperty dcterms:identifier ;
-    schema:domainIncludes schema:Thing ;
-    schema:rangeIncludes schema:PropertyValue,
-        schema:Text,
-        schema:URL .
-		`),
+	schema:identifier a rdf:Property ;
+	    rdfs:label "identifier" ;
+	    owl:equivalentProperty dcterms:identifier ;
+	    schema:domainIncludes schema:Thing ;
+	    schema:rangeIncludes schema:PropertyValue,
+	        schema:Text,
+	        schema:URL .
+			`),
 		expectedTokens: []string{
 			`@prefix`,
 			`dcterms:`,
@@ -725,6 +725,359 @@ schema:identifier a rdf:Property ;
 			{"https://schema.org/identifier", "https://schema.org/rangeIncludes", "https://schema.org/URL"},
 		},
 	},
+
+	"blank_node_property_list": {
+		data: []byte(`
+		@prefix ericFoaf: <http://www.w3.org/People/Eric/ericP-foaf.rdf#> .
+		@prefix : <http://xmlns.com/foaf/0.1/> .
+		ericFoaf:ericP :givenName "Eric" ;
+					  :knows <http://norman.walsh.name/knows/who/dan-brickley> ,
+							  [ :mbox <mailto:timbl@w3.org> ] ,
+							  <http://getopenid.com/amyvdh> .
+				`),
+		expectedTokens: []string{
+			`@prefix`,
+			`ericFoaf:`,
+			`<http://www.w3.org/People/Eric/ericP-foaf.rdf#>`,
+			`.`,
+			`@prefix`,
+			`:`,
+			`<http://xmlns.com/foaf/0.1/>`,
+			`.`,
+			`ericFoaf:ericP`,
+			`:givenName`,
+			`"Eric"`,
+			`;`,
+			`:knows`,
+			`<http://norman.walsh.name/knows/who/dan-brickley>`,
+			`,`,
+			`[`,
+			`:mbox`,
+			`<mailto:timbl@w3.org>`,
+			`]`,
+			`,`,
+			`<http://getopenid.com/amyvdh>`,
+			`.`,
+		},
+		expectedTriples: [][3]string{
+			{"http://www.w3.org/People/Eric/ericP-foaf.rdf#ericP", "http://xmlns.com/foaf/0.1/givenName", "Eric"},
+			{"http://www.w3.org/People/Eric/ericP-foaf.rdf#ericP", "http://xmlns.com/foaf/0.1/knows", "http://norman.walsh.name/knows/who/dan-brickley"},
+			{"_:b0", "http://xmlns.com/foaf/0.1/mbox", "mailto:timbl@w3.org"},
+			{"http://www.w3.org/People/Eric/ericP-foaf.rdf#ericP", "http://xmlns.com/foaf/0.1/knows", "_:b0"},
+			{"http://www.w3.org/People/Eric/ericP-foaf.rdf#ericP", "http://xmlns.com/foaf/0.1/knows", "http://getopenid.com/amyvdh"},
+		},
+	},
+	"blank_node_property_list_nested": {
+		data: []byte(`
+		@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+
+		foaf:Alice foaf:knows [
+			foaf:name "Bob" ;
+			foaf:knows [
+				foaf:name "Eve" ] ;
+			foaf:mbox <bob@example.com> ] .
+				`),
+		expectedTokens: []string{
+			`@prefix`,
+			`foaf:`,
+			`<http://xmlns.com/foaf/0.1/>`,
+			`.`,
+			`foaf:Alice`,
+			`foaf:knows`,
+			`[`,
+			`foaf:name`,
+			`"Bob"`,
+			`;`,
+			`foaf:knows`,
+			`[`,
+			`foaf:name`,
+			`"Eve"`,
+			`]`,
+			`;`,
+			`foaf:mbox`,
+			`<bob@example.com>`,
+			`]`,
+			`.`,
+		},
+		expectedTriples: [][3]string{
+			{"_:b0", "http://xmlns.com/foaf/0.1/name", "Bob"},
+			{"_:b1", "http://xmlns.com/foaf/0.1/name", "Eve"},
+			{"_:b0", "http://xmlns.com/foaf/0.1/knows", "_:b1"},
+			{"_:b0", "http://xmlns.com/foaf/0.1/mbox", "bob@example.com"},
+			{"http://xmlns.com/foaf/0.1/Alice", "http://xmlns.com/foaf/0.1/knows", "_:b0"},
+		},
+	},
+	"blank_node_as_subject": {
+		data: []byte(`
+		@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+		# Someone knows someone else, who has the name "Bob".
+
+		[ foaf:name "Bob" ] foaf:knows foaf:someone .
+				`),
+		expectedTokens: []string{
+			`@prefix`,
+			`foaf:`,
+			`<http://xmlns.com/foaf/0.1/>`,
+			`.`,
+			`[`,
+			`foaf:name`,
+			`"Bob"`,
+			`]`,
+			`foaf:knows`,
+			`foaf:someone`,
+			`.`,
+		},
+		expectedTriples: [][3]string{
+			{"_:b0", "http://xmlns.com/foaf/0.1/name", "Bob"},
+			{"_:b0", "http://xmlns.com/foaf/0.1/knows", "http://xmlns.com/foaf/0.1/someone"},
+		},
+	},
+	"blank_node_as_subject_nested": {
+		data: []byte(`
+		@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+		# Someone knows someone else, who has the name "Bob".
+
+		[ foaf:name "Bob"; foaf:knows [ foaf:name "Alice" ] ] foaf:knows foaf:someone .
+				`),
+		expectedTokens: []string{
+			`@prefix`,
+			`foaf:`,
+			`<http://xmlns.com/foaf/0.1/>`,
+			`.`,
+			`[`,
+			`foaf:name`,
+			`"Bob"`,
+			`;`,
+			`foaf:knows`,
+			`[`,
+			`foaf:name`,
+			`"Alice"`,
+			`]`,
+			`]`,
+			`foaf:knows`,
+			`foaf:someone`,
+			`.`,
+		},
+		expectedTriples: [][3]string{
+			{"_:b0", "http://xmlns.com/foaf/0.1/name", "Bob"},
+			{"_:b1", "http://xmlns.com/foaf/0.1/name", "Alice"},
+			{"_:b0", "http://xmlns.com/foaf/0.1/knows", "_:b1"},
+			{"_:b0", "http://xmlns.com/foaf/0.1/knows", "http://xmlns.com/foaf/0.1/someone"},
+		},
+	},
+	"blank_node_empty_subject": {
+		data: []byte(`
+		@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+
+		# Someone knows someone else, who has the name "Bob".
+		[ ] foaf:knows foaf:someone .
+				`),
+		expectedTokens: []string{
+			`@prefix`,
+			`foaf:`,
+			`<http://xmlns.com/foaf/0.1/>`,
+			`.`,
+			`[`,
+			`]`,
+			`foaf:knows`,
+			`foaf:someone`,
+			`.`,
+		},
+		expectedTriples: [][3]string{
+			{"_:b0", "http://xmlns.com/foaf/0.1/knows", "http://xmlns.com/foaf/0.1/someone"},
+		},
+	},
+	"blank_node_empty_subject_no_whitespace": {
+		data: []byte(`
+		@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+
+		# Someone knows someone else, who has the name "Bob".
+		[] foaf:knows foaf:someone .
+				`),
+		expectedTokens: []string{
+			`@prefix`,
+			`foaf:`,
+			`<http://xmlns.com/foaf/0.1/>`,
+			`.`,
+			`[`,
+			`]`,
+			`foaf:knows`,
+			`foaf:someone`,
+			`.`,
+		},
+		expectedTriples: [][3]string{
+			{"_:b0", "http://xmlns.com/foaf/0.1/knows", "http://xmlns.com/foaf/0.1/someone"},
+		},
+	},
+	"blank_node_collision_avoided": {
+		data: []byte(`
+		@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+
+		_:b0 foaf:knows [
+			foaf:name "Bob" ;
+			foaf:knows [
+				foaf:name "Eve" ] ;
+			foaf:mbox <bob@example.com> ] .
+				`),
+		expectedTokens: []string{
+			`@prefix`,
+			`foaf:`,
+			`<http://xmlns.com/foaf/0.1/>`,
+			`.`,
+			`_:b0`,
+			`foaf:knows`,
+			`[`,
+			`foaf:name`,
+			`"Bob"`,
+			`;`,
+			`foaf:knows`,
+			`[`,
+			`foaf:name`,
+			`"Eve"`,
+			`]`,
+			`;`,
+			`foaf:mbox`,
+			`<bob@example.com>`,
+			`]`,
+			`.`,
+		},
+		expectedTriples: [][3]string{
+			{"_:b1", "http://xmlns.com/foaf/0.1/name", "Bob"},
+			{"_:b2", "http://xmlns.com/foaf/0.1/name", "Eve"},
+			{"_:b1", "http://xmlns.com/foaf/0.1/knows", "_:b2"},
+			{"_:b1", "http://xmlns.com/foaf/0.1/mbox", "bob@example.com"},
+			{"_:b0", "http://xmlns.com/foaf/0.1/knows", "_:b1"},
+		},
+	},
+	"blank_node_subject_and_object": {
+		data: []byte(`
+		@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+		# Someone knows someone else, who has the name "Bob".
+		[ foaf:name "Bob" ] foaf:knows [ foaf:name "Alice" ] .
+				`),
+		expectedTokens: []string{
+			`@prefix`,
+			`foaf:`,
+			`<http://xmlns.com/foaf/0.1/>`,
+			`.`,
+			`[`,
+			`foaf:name`,
+			`"Bob"`,
+			`]`,
+			`foaf:knows`,
+			`[`,
+			`foaf:name`,
+			`"Alice"`,
+			`]`,
+			`.`,
+		},
+		expectedTriples: [][3]string{
+			{"_:b0", "http://xmlns.com/foaf/0.1/name", "Bob"},
+			{"_:b1", "http://xmlns.com/foaf/0.1/name", "Alice"},
+			{"_:b0", "http://xmlns.com/foaf/0.1/knows", "_:b1"},
+		},
+	},
+	"collection_object": {
+		data: []byte(`
+		@prefix : <http://example.org/stuff/1.0/> .
+		:a :b ( "apple" "banana" ) .
+				`),
+		expectedTokens: []string{
+			`@prefix`,
+			`:`,
+			`<http://example.org/stuff/1.0/>`,
+			`.`,
+			`:a`,
+			`:b`,
+			`(`,
+			`"apple"`,
+			`"banana"`,
+			`)`,
+			`.`,
+		},
+		expectedTriples: [][3]string{
+			{"_:b0", "http://www.w3.org/1999/02/22-rdf-syntax-ns#first", `apple`},
+			{"_:b0", "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest", "_:b1"},
+			{"_:b1", "http://www.w3.org/1999/02/22-rdf-syntax-ns#first", `banana`},
+			{"_:b1", "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest", "nil"},
+			{"http://example.org/stuff/1.0/a", "http://example.org/stuff/1.0/b", "_:b0"},
+		},
+	},
+	"collection_object_empty": {
+		data: []byte(`
+		@prefix : <http://example.org/stuff/1.0/> .
+		:subject :predicate2 () .
+				`),
+		expectedTokens: []string{
+			`@prefix`,
+			`:`,
+			`<http://example.org/stuff/1.0/>`,
+			`.`,
+			`:subject`,
+			`:predicate2`,
+			`(`,
+			`)`,
+			`.`,
+		},
+		expectedTriples: [][3]string{
+			{"http://example.org/stuff/1.0/subject", "http://example.org/stuff/1.0/predicate2", "nil"},
+		},
+	},
+	"collection_subject": {
+		data: []byte(`
+		@prefix : <http://example.org/stuff/1.0/> .
+		(1 2.0 3E1) :p "w" .
+				`),
+		expectedTokens: []string{
+			`@prefix`,
+			`:`,
+			`<http://example.org/stuff/1.0/>`,
+			`.`,
+			`(`,
+			`1`,
+			`2.0`,
+			`3E1`,
+			`)`,
+			`:p`,
+			`"w"`,
+			`.`,
+		},
+		expectedTriples: [][3]string{
+			{"_:b0", "http://www.w3.org/1999/02/22-rdf-syntax-ns#first", `1`},
+			{"_:b0", "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest", "_:b1"},
+			{"_:b1", "http://www.w3.org/1999/02/22-rdf-syntax-ns#first", `2.0`},
+			{"_:b1", "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest", "_:b2"},
+			{"_:b2", "http://www.w3.org/1999/02/22-rdf-syntax-ns#first", `3E1`},
+			{"_:b2", "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest", "nil"},
+			{"_:b0", "http://example.org/stuff/1.0/p", "w"},
+		},
+	},
+	"collection_sanitized": {
+		data: []byte(`
+		@prefix : <http://example.org/stuff/1.0/> .
+		:a :b ( "apple"@en :c ) .
+				`),
+		expectedTokens: []string{
+			`@prefix`,
+			`:`,
+			`<http://example.org/stuff/1.0/>`,
+			`.`,
+			`:a`,
+			`:b`,
+			`(`,
+			`"apple"@en`,
+			`:c`,
+			`)`,
+			`.`,
+		},
+		expectedTriples: [][3]string{
+			{"_:b0", "http://www.w3.org/1999/02/22-rdf-syntax-ns#first", `apple`},
+			{"_:b0", "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest", "_:b1"},
+			{"_:b1", "http://www.w3.org/1999/02/22-rdf-syntax-ns#first", `http://example.org/stuff/1.0/c`},
+			{"_:b1", "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest", "nil"},
+			{"http://example.org/stuff/1.0/a", "http://example.org/stuff/1.0/b", "_:b0"},
+		},
+	},
 }
 
 func TestScanTurtle(t *testing.T) {
@@ -755,6 +1108,7 @@ func TestNext(t *testing.T) {
 				if !ok {
 					break
 				}
+
 				actual = append(actual, s.Triple())
 			}
 			assert.Equal(t, tc.expectedTriples, actual, "scanner should have created correct turtle triples")
