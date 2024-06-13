@@ -6,7 +6,7 @@ import (
 	"unicode/utf8"
 )
 
-func scanTurtle(data []byte, atEOF bool) (advance int, token []byte, err error) {
+func splitTurtle(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	// skip leading spaces
 	start := 0
 	var comment bool
