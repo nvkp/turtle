@@ -8,7 +8,7 @@ type ScanByteCounter struct {
 
 func (s *ScanByteCounter) SplitFunc() bufio.SplitFunc {
 	return func(data []byte, atEOF bool) (int, []byte, error) {
-		adv, tok, err := scanTurtle(data, atEOF) // TODO maybe split turtle?
+		adv, tok, err := splitTurtle(data, atEOF)
 		s.BytesRead += adv
 		return adv, tok, err
 	}

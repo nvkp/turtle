@@ -999,7 +999,7 @@ var scanTestCases = map[string]struct {
 			{"_:b0", "http://www.w3.org/1999/02/22-rdf-syntax-ns#first", `apple`},
 			{"_:b0", "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest", "_:b1"},
 			{"_:b1", "http://www.w3.org/1999/02/22-rdf-syntax-ns#first", `banana`},
-			{"_:b1", "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest", "nil"},
+			{"_:b1", "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest", "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"},
 			{"http://example.org/stuff/1.0/a", "http://example.org/stuff/1.0/b", "_:b0"},
 		},
 	},
@@ -1020,7 +1020,7 @@ var scanTestCases = map[string]struct {
 			`.`,
 		},
 		expectedTriples: [][3]string{
-			{"http://example.org/stuff/1.0/subject", "http://example.org/stuff/1.0/predicate2", "nil"},
+			{"http://example.org/stuff/1.0/subject", "http://example.org/stuff/1.0/predicate2", "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"},
 		},
 	},
 	"collection_subject": {
@@ -1048,7 +1048,7 @@ var scanTestCases = map[string]struct {
 			{"_:b1", "http://www.w3.org/1999/02/22-rdf-syntax-ns#first", `2.0`},
 			{"_:b1", "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest", "_:b2"},
 			{"_:b2", "http://www.w3.org/1999/02/22-rdf-syntax-ns#first", `3E1`},
-			{"_:b2", "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest", "nil"},
+			{"_:b2", "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest", "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"},
 			{"_:b0", "http://example.org/stuff/1.0/p", "w"},
 		},
 	},
@@ -1074,8 +1074,148 @@ var scanTestCases = map[string]struct {
 			{"_:b0", "http://www.w3.org/1999/02/22-rdf-syntax-ns#first", `apple`},
 			{"_:b0", "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest", "_:b1"},
 			{"_:b1", "http://www.w3.org/1999/02/22-rdf-syntax-ns#first", `http://example.org/stuff/1.0/c`},
-			{"_:b1", "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest", "nil"},
+			{"_:b1", "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest", "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"},
 			{"http://example.org/stuff/1.0/a", "http://example.org/stuff/1.0/b", "_:b0"},
+		},
+	},
+	"collection_nested": {
+		data: []byte(`
+		@prefix : <http://example.org/stuff/1.0/> .
+		(1 [:p :q] ( 2 ) ) :p2 :q2 .
+				`),
+		expectedTokens: []string{
+			`@prefix`,
+			`:`,
+			`<http://example.org/stuff/1.0/>`,
+			`.`,
+			`(`,
+			`1`,
+			`[`,
+			`:p`,
+			`:q`,
+			`]`,
+			`(`,
+			`2`,
+			`)`,
+			`)`,
+			`:p2`,
+			`:q2`,
+			`.`,
+		},
+		expectedTriples: [][3]string{
+			{"_:b1", "http://example.org/stuff/1.0/p", `http://example.org/stuff/1.0/q`},
+			{"_:b3", "http://www.w3.org/1999/02/22-rdf-syntax-ns#first", `2`},
+			{"_:b3", "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest", `http://www.w3.org/1999/02/22-rdf-syntax-ns#nil`},
+			{"_:b0", "http://www.w3.org/1999/02/22-rdf-syntax-ns#first", `1`},
+			{"_:b0", "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest", `_:b2`},
+			{"_:b2", "http://www.w3.org/1999/02/22-rdf-syntax-ns#first", `_:b1`},
+			{"_:b2", "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest", `_:b4`},
+			{"_:b4", "http://www.w3.org/1999/02/22-rdf-syntax-ns#first", `_:b3`},
+			{"_:b4", "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest", `http://www.w3.org/1999/02/22-rdf-syntax-ns#nil`},
+			{"_:b0", "http://example.org/stuff/1.0/p2", `http://example.org/stuff/1.0/q2`},
+		},
+	},
+	"blank_node_list_in_collection_in_blank_node_list": {
+		data: []byte(`
+		@prefix brick: <https://brickschema.org/schema/Brick#> .
+		@prefix sh: <http://www.w3.org/ns/shacl#> .
+		@prefix tag: <https://brickschema.org/schema/BrickTag#> .
+
+		brick:Portfolio sh:property [ sh:or ( [ sh:class brick:Site ] ) ;
+				sh:path brick:hasPart ] ;
+		sh:rule [ a sh:TripleRule ;
+				sh:object tag:Collection ;
+				sh:predicate brick:hasTag ;
+				sh:subject sh:this ],
+			[ a sh:TripleRule ;
+				sh:object tag:Portfolio ;
+				sh:predicate brick:hasTag ;
+				sh:subject sh:this ] ;
+		brick:hasAssociatedTag tag:Collection,
+			tag:Portfolio .
+				`),
+		expectedTokens: []string{
+			`@prefix`,
+			`brick:`,
+			`<https://brickschema.org/schema/Brick#>`,
+			`.`,
+			`@prefix`,
+			`sh:`,
+			`<http://www.w3.org/ns/shacl#>`,
+			`.`,
+			`@prefix`,
+			`tag:`,
+			`<https://brickschema.org/schema/BrickTag#>`,
+			`.`,
+			`brick:Portfolio`,
+			`sh:property`,
+			`[`,
+			`sh:or`,
+			`(`,
+			`[`,
+			`sh:class`,
+			`brick:Site`,
+			`]`,
+			`)`,
+			`;`,
+			`sh:path`,
+			`brick:hasPart`,
+			`]`,
+			`;`,
+			`sh:rule`,
+			`[`,
+			`a`,
+			`sh:TripleRule`,
+			`;`,
+			`sh:object`,
+			`tag:Collection`,
+			`;`,
+			`sh:predicate`,
+			`brick:hasTag`,
+			`;`,
+			`sh:subject`,
+			`sh:this`,
+			`]`,
+			`,`,
+			`[`,
+			`a`,
+			`sh:TripleRule`,
+			`;`,
+			`sh:object`,
+			`tag:Portfolio`,
+			`;`,
+			`sh:predicate`,
+			`brick:hasTag`,
+			`;`,
+			`sh:subject`,
+			`sh:this`,
+			`]`,
+			`;`,
+			`brick:hasAssociatedTag`,
+			`tag:Collection`,
+			`,`,
+			`tag:Portfolio`,
+			`.`,
+		},
+		expectedTriples: [][3]string{
+			{"_:b1", "http://www.w3.org/ns/shacl#class", `https://brickschema.org/schema/Brick#Site`},
+			{"_:b2", "http://www.w3.org/1999/02/22-rdf-syntax-ns#first", "_:b1"},
+			{"_:b2", "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest", "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"},
+			{"_:b0", "http://www.w3.org/ns/shacl#or", "_:b2"},
+			{"_:b0", "http://www.w3.org/ns/shacl#path", "https://brickschema.org/schema/Brick#hasPart"},
+			{"https://brickschema.org/schema/Brick#Portfolio", "http://www.w3.org/ns/shacl#property", "_:b0"},
+			{"_:b3", "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", "http://www.w3.org/ns/shacl#TripleRule"},
+			{"_:b3", "http://www.w3.org/ns/shacl#object", "https://brickschema.org/schema/BrickTag#Collection"},
+			{"_:b3", "http://www.w3.org/ns/shacl#predicate", "https://brickschema.org/schema/Brick#hasTag"},
+			{"_:b3", "http://www.w3.org/ns/shacl#subject", "http://www.w3.org/ns/shacl#this"},
+			{"https://brickschema.org/schema/Brick#Portfolio", "http://www.w3.org/ns/shacl#rule", "_:b3"},
+			{"_:b4", "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", "http://www.w3.org/ns/shacl#TripleRule"},
+			{"_:b4", "http://www.w3.org/ns/shacl#object", "https://brickschema.org/schema/BrickTag#Portfolio"},
+			{"_:b4", "http://www.w3.org/ns/shacl#predicate", "https://brickschema.org/schema/Brick#hasTag"},
+			{"_:b4", "http://www.w3.org/ns/shacl#subject", "http://www.w3.org/ns/shacl#this"},
+			{"https://brickschema.org/schema/Brick#Portfolio", "http://www.w3.org/ns/shacl#rule", "_:b4"},
+			{"https://brickschema.org/schema/Brick#Portfolio", "https://brickschema.org/schema/Brick#hasAssociatedTag", "https://brickschema.org/schema/BrickTag#Collection"},
+			{"https://brickschema.org/schema/Brick#Portfolio", "https://brickschema.org/schema/Brick#hasAssociatedTag", "https://brickschema.org/schema/BrickTag#Portfolio"},
 		},
 	},
 }
@@ -1084,7 +1224,7 @@ func TestScanTurtle(t *testing.T) {
 	for name, tc := range scanTestCases {
 		t.Run(name, func(t *testing.T) {
 			s := bufio.NewScanner(bytes.NewReader(tc.data))
-			s.Split(scanTurtle)
+			s.Split(splitTurtle)
 			actual := make([]string, 0)
 			for {
 				ok := s.Scan()
@@ -1108,7 +1248,6 @@ func TestNext(t *testing.T) {
 				if !ok {
 					break
 				}
-
 				actual = append(actual, s.Triple())
 			}
 			assert.Equal(t, tc.expectedTriples, actual, "scanner should have created correct turtle triples")

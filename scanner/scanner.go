@@ -10,8 +10,6 @@ import (
 
 var regexBlankNode = regexp.MustCompile(`_:.+`)
 
-const nilString = "nil"
-
 // Scanner uses bufio.Scanner to parse the provided byte slice word by word.
 // It keeps information about prefixes and base of the provided graph and
 // the next triple to be read.
@@ -27,15 +25,29 @@ type Scanner struct {
 	curSubject       string
 	curPredicate     string
 	curIndex         int
-	blankNodeLists   []blankNodeList
+	bnLists          []blankNodeList
+	colls            []collection
 }
 
 type blankNodeList struct {
-	startIndex   int
+	start        int
 	curIndex     int
 	curSubject   string
 	curPredicate string
 	blankNode    string
+}
+
+type collection struct {
+	start        int
+	curIndex     int
+	curSubject   string
+	curPredicate string
+	items        []collectionItem
+}
+
+type collectionItem struct {
+	item      string
+	blankNode string
 }
 
 // New accepts a byte slice of the Turtle data and returns a new scanner.Scanner.
@@ -51,7 +63,8 @@ func New(data []byte) *Scanner {
 		t:               make([][3]string, 0),
 		prefixes:        make(map[string]string),
 		blankNodes:      make(map[string]struct{}),
-		blankNodeLists:  make([]blankNodeList, 0),
+		bnLists:         make([]blankNodeList, 0),
+		colls:           make([]collection, 0),
 	}
 }
 
@@ -87,6 +100,11 @@ func (s *Scanner) Next() bool {
 			}
 
 			prefix := s.s.Text()
+
+			if len(prefix) == 0 {
+				continue
+			}
+
 			prefix = prefix[:len(prefix)-1]
 
 			if ok := s.s.Scan(); !ok {
@@ -141,11 +159,11 @@ func (s *Scanner) Next() bool {
 		// beginning of a blank node list
 		if token == "[" {
 			blankNode := s.newBlankNode()
-			s.blankNodeLists = append(s.blankNodeLists, blankNodeList{
+			s.bnLists = append(s.bnLists, blankNodeList{
+				start:        i,
 				curSubject:   s.curSubject,
 				curPredicate: s.curPredicate,
 				curIndex:     s.curIndex,
-				startIndex:   i,
 				blankNode:    blankNode,
 			})
 			s.curSubject = blankNode
@@ -155,8 +173,12 @@ func (s *Scanner) Next() bool {
 
 		// ending of a blank node list
 		if token == "]" {
-			list := s.blankNodeLists[len(s.blankNodeLists)-1]
-			s.blankNodeLists = s.blankNodeLists[:len(s.blankNodeLists)-1]
+			if len(s.bnLists) == 0 {
+				continue
+			}
+			list := s.bnLists[len(s.bnLists)-1]
+			s.bnLists = s.bnLists[:len(s.bnLists)-1]
+
 			newData := make([]byte, 0)
 			newData = append(newData, []byte(list.blankNode)...)
 			newData = append(newData, s.data[i:]...)
@@ -171,48 +193,74 @@ func (s *Scanner) Next() bool {
 			continue
 		}
 
-		// TODO has to be recursive to cover nested collections
-
 		// beginning of a collection
 		if token == "(" {
-			items := make([]string, 0)
-			blankNodes := make([]string, 0)
-			for {
-				if ok := s.s.Scan(); !ok {
-					return false
-				}
-				token = s.s.Text()
-				if token == ")" {
-					break
-				}
-				items = append(items, s.sanitize(token))
-				blankNodes = append(blankNodes, s.newBlankNode())
+			col := collection{
+				start:        i,
+				curIndex:     s.curIndex,
+				curSubject:   s.curSubject,
+				curPredicate: s.curPredicate,
+				items:        make([]collectionItem, 0),
 			}
 
-			for i, item := range items {
+			s.colls = append(s.colls, col)
+
+			continue
+		}
+
+		if token != ")" && s.inCollection() {
+			item := collectionItem{
+				item:      s.sanitize(token),
+				blankNode: s.newBlankNode(),
+			}
+
+			s.colls[len(s.colls)-1].items = append(s.colls[len(s.colls)-1].items, item)
+			continue
+		}
+
+		if token == ")" {
+			if len(s.colls) == 0 {
+				continue
+			}
+
+			lastCollection := s.colls[len(s.colls)-1]
+
+			s.colls = s.colls[:len(s.colls)-1]
+
+			for i, item := range lastCollection.items {
 				// rdf first
-				s.t = append(s.t, [3]string{blankNodes[i], rdfFirst, item})
+				s.t = append(s.t, [3]string{item.blankNode, rdfFirst, item.item})
 				// rdf rest
-				rest := nilString
-				if i < len(blankNodes)-1 {
-					rest = blankNodes[i+1]
+				rest := rdfNil
+				if i < len(lastCollection.items)-1 {
+					rest = lastCollection.items[i+1].blankNode
 				}
-				s.t = append(s.t, [3]string{blankNodes[i], rdfRest, rest})
+				s.t = append(s.t, [3]string{item.blankNode, rdfRest, rest})
 			}
 
-			collectionStart := nilString
-			if len(items) > 0 {
-				collectionStart = blankNodes[0]
+			collectionStart := rdfNilInTurtle
+			if len(lastCollection.items) > 0 {
+				collectionStart = lastCollection.items[0].blankNode
 			}
 
-			if s.curIndex == 2 {
-				s.t = append(s.t, [3]string{s.curSubject, s.curPredicate, collectionStart})
+			newData := make([]byte, 0)
+			newData = append(newData, []byte(collectionStart)...)
+			newData = append(newData, s.data[i:]...)
+			s.data = newData
+			reader := bytes.NewReader(s.data)
+			s.s = bufio.NewScanner(reader)
+			s.scanByteCounter = &ScanByteCounter{}
+			s.s.Split(s.scanByteCounter.SplitFunc())
+
+			s.curIndex = lastCollection.curIndex
+			s.curSubject = lastCollection.curSubject
+			s.curPredicate = lastCollection.curPredicate
+
+			if len(lastCollection.items) > 0 {
 				return true
 			}
 
-			if s.curIndex == 0 {
-				token = collectionStart
-			}
+			continue
 		}
 
 		token = s.sanitize(token)
@@ -267,4 +315,16 @@ func (s *Scanner) newBlankNode() string {
 		s.blankNodes[blankNode] = struct{}{}
 		return blankNode
 	}
+}
+
+func (s *Scanner) inCollection() bool {
+	if len(s.colls) == 0 {
+		return false
+	}
+
+	if len(s.bnLists) == 0 {
+		return true
+	}
+
+	return s.colls[len(s.colls)-1].start > s.bnLists[len(s.bnLists)-1].start
 }
