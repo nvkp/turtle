@@ -102,11 +102,11 @@ var marshalTestCases = map[string]struct {
 		expString: `<http://example.org/green-goblin> 
 	<http://www.perceive.net/schemas/relationship/enemyOf> <http://example.org/spiderman> ;
 	<http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> ;
-	<http://xmlns.com/foaf/0.1/name> <Green Goblin> .
+	<http://xmlns.com/foaf/0.1/name> "Green Goblin" .
 <http://example.org/spiderman> 
 	<http://www.perceive.net/schemas/relationship/enemyOf> <http://example.org/green-goblin> ;
 	<http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> ;
-	<http://xmlns.com/foaf/0.1/name> <Spiderman>, <Человек-паук> .
+	<http://xmlns.com/foaf/0.1/name> "Spiderman", "Человек-паук" .
 `,
 	},
 	"slice_pointer": {
@@ -150,11 +150,11 @@ var marshalTestCases = map[string]struct {
 		expString: `<http://example.org/green-goblin> 
 	<http://www.perceive.net/schemas/relationship/enemyOf> <http://example.org/spiderman> ;
 	<http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> ;
-	<http://xmlns.com/foaf/0.1/name> <Green Goblin> .
+	<http://xmlns.com/foaf/0.1/name> "Green Goblin" .
 <http://example.org/spiderman> 
 	<http://www.perceive.net/schemas/relationship/enemyOf> <http://example.org/green-goblin> ;
 	<http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> ;
-	<http://xmlns.com/foaf/0.1/name> <Spiderman>, <Человек-паук> .
+	<http://xmlns.com/foaf/0.1/name> "Spiderman", "Человек-паук" .
 `,
 	},
 	"named_type_slice": {
@@ -198,11 +198,11 @@ var marshalTestCases = map[string]struct {
 		expString: `<http://example.org/green-goblin> 
 	<http://www.perceive.net/schemas/relationship/enemyOf> <http://example.org/spiderman> ;
 	<http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> ;
-	<http://xmlns.com/foaf/0.1/name> <Green Goblin> .
+	<http://xmlns.com/foaf/0.1/name> "Green Goblin" .
 <http://example.org/spiderman> 
 	<http://www.perceive.net/schemas/relationship/enemyOf> <http://example.org/green-goblin> ;
 	<http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> ;
-	<http://xmlns.com/foaf/0.1/name> <Spiderman>, <Человек-паук> .
+	<http://xmlns.com/foaf/0.1/name> "Spiderman", "Человек-паук" .
 `,
 	},
 	"triple_struct_with_pointers": {

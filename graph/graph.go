@@ -72,7 +72,7 @@ func (g *Graph) Bytes() ([]byte, error) {
 
 	subjects := sortSubjects(g)
 	for _, subject := range subjects {
-		b = append(b, []byte(fmt.Sprintf("<%s> ", subject))...)
+		b = append(b, []byte(fmt.Sprintf("%s ", sanitize(subject)))...)
 
 		predicates := sortPredicates(g.m[subject])
 
@@ -113,7 +113,7 @@ func (g *Graph) Bytes() ([]byte, error) {
 
 func writeObjects(b *[]byte, objects []string) {
 	for i, object := range objects {
-		*b = append(*b, []byte(fmt.Sprintf("<%s>", object))...)
+		*b = append(*b, []byte(sanitize(object))...)
 		// when single object for predicate
 		if len(objects) == 1 {
 			break

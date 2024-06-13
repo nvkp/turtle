@@ -1218,6 +1218,49 @@ var scanTestCases = map[string]struct {
 			{"https://brickschema.org/schema/Brick#Portfolio", "https://brickschema.org/schema/Brick#hasAssociatedTag", "https://brickschema.org/schema/BrickTag#Portfolio"},
 		},
 	},
+	"literal_character_in_literal": {
+		data: []byte(`
+		@prefix unit: <http://qudt.org/vocab/unit/> .
+		@prefix qudt: <http://qudt.org/schema/qudt/> .
+		@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+		unit:ARCMIN a qudt:Unit ;
+		rdfs:label "ArcMinute"@en ;
+		qudt:symbol "'",
+			"'"^^xsd:string .
+				`),
+		expectedTokens: []string{
+			`@prefix`,
+			`unit:`,
+			`<http://qudt.org/vocab/unit/>`,
+			`.`,
+			`@prefix`,
+			`qudt:`,
+			`<http://qudt.org/schema/qudt/>`,
+			`.`,
+			`@prefix`,
+			`rdfs:`,
+			`<http://www.w3.org/2000/01/rdf-schema#>`,
+			`.`,
+			`unit:ARCMIN`,
+			`a`,
+			`qudt:Unit`,
+			`;`,
+			`rdfs:label`,
+			`"ArcMinute"@en`,
+			`;`,
+			`qudt:symbol`,
+			`"'"`,
+			`,`,
+			`"'"^^xsd:string`,
+			`.`,
+		},
+		expectedTriples: [][3]string{
+			{"http://qudt.org/vocab/unit/ARCMIN", "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", `http://qudt.org/schema/qudt/Unit`},
+			{"http://qudt.org/vocab/unit/ARCMIN", "http://www.w3.org/2000/01/rdf-schema#label", `ArcMinute`},
+			{"http://qudt.org/vocab/unit/ARCMIN", "http://qudt.org/schema/qudt/symbol", `'`},
+			{"http://qudt.org/vocab/unit/ARCMIN", "http://qudt.org/schema/qudt/symbol", `'`},
+		},
+	},
 }
 
 func TestScanTurtle(t *testing.T) {

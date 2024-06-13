@@ -42,5 +42,51 @@ func (s *Scanner) sanitize(token string) string {
 	}
 
 	// trim token
-	return strings.Trim(token, "<>\"'")
+	return trim(token)
+}
+
+var trimmedPairs = []struct {
+	left  string
+	right string
+}{
+	{
+		left:  `"""`,
+		right: `"""`,
+	},
+	{
+		left:  `'''`,
+		right: `'''`,
+	},
+	{
+		left:  "<",
+		right: ">",
+	},
+	{
+		left:  "",
+		right: ">",
+	},
+	{
+		left:  `"`,
+		right: `"`,
+	},
+	{
+		left:  `'`,
+		right: `'`,
+	},
+}
+
+func trim(token string) string {
+	if len(token) == 0 {
+		return ""
+	}
+
+	for _, pair := range trimmedPairs {
+		if strings.HasPrefix(token, pair.left) && strings.HasSuffix(token, pair.right) {
+			token, _ = strings.CutPrefix(token, pair.left)
+			token, _ = strings.CutSuffix(token, pair.right)
+			return token
+		}
+	}
+
+	return token
 }
