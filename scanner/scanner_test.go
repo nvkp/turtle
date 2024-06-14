@@ -1261,6 +1261,25 @@ var scanTestCases = map[string]struct {
 			{"http://qudt.org/vocab/unit/ARCMIN", "http://qudt.org/schema/qudt/symbol", `'`},
 		},
 	},
+	"float_in_iri": {
+		data: []byte(`
+		@prefix brick: <https://brickschema.org/schema/Brick#> .
+		brick:PM2.5_Sensor brick:hasQuantity brick:PM2.5_Concentration .
+				`),
+		expectedTokens: []string{
+			`@prefix`,
+			`brick:`,
+			`<https://brickschema.org/schema/Brick#>`,
+			`.`,
+			`brick:PM2.5_Sensor`,
+			`brick:hasQuantity`,
+			`brick:PM2.5_Concentration`,
+			`.`,
+		},
+		expectedTriples: [][3]string{
+			{"https://brickschema.org/schema/Brick#PM2.5_Sensor", "https://brickschema.org/schema/Brick#hasQuantity", `https://brickschema.org/schema/Brick#PM2.5_Concentration`},
+		},
+	},
 }
 
 func TestScanTurtle(t *testing.T) {

@@ -1,3 +1,2 @@
 bricks_test.go
-Brick_original.ttl
-Brick.ttl
+*.ttl
