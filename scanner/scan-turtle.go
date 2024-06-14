@@ -36,6 +36,7 @@ func splitTurtle(data []byte, atEOF bool) (advance int, token []byte, err error)
 	var apostrophe bool
 	var quotationMark bool
 	var iri bool
+	var prefixedIri bool
 	var runeBuffer []rune
 	var inMultiLineLiteral bool
 	for width, i := 0, start; i < len(data); i += width {
@@ -59,9 +60,19 @@ func splitTurtle(data []byte, atEOF bool) (advance int, token []byte, err error)
 			return i + width, data[start:i], nil
 		}
 
+		// if prefixed iri and one of the key characters and not literal and number does not follow
+		// set the prefixed uri state to false
+		if slices.Contains(keyCharacters, r) && !iri && !literal && prefixedIri {
+			after, _ := utf8.DecodeRune(data[i+width:])
+
+			if !unicode.IsDigit(after) {
+				prefixedIri = false
+			}
+		}
+
 		// if dot of a float (after it number) and not in iri and not in literal
 		// return the float number
-		if r == runeFullStop && !iri && !literal {
+		if r == runeFullStop && !iri && !literal && !prefixedIri {
 			after, afterWidth := utf8.DecodeRune(data[i+width:])
 
 			if unicode.IsDigit(after) {
@@ -78,7 +89,7 @@ func splitTurtle(data []byte, atEOF bool) (advance int, token []byte, err error)
 			}
 		}
 
-		if slices.Contains(keyCharacters, r) && !iri && !literal { // ; , . [
+		if slices.Contains(keyCharacters, r) && !iri && !literal && !prefixedIri { // ; , . [
 			// if it is first character, we return it as the word
 			if i == 0 || start == i {
 				return i + width, data[start : i+width], nil
@@ -101,10 +112,15 @@ func splitTurtle(data []byte, atEOF bool) (advance int, token []byte, err error)
 			apostrophe = !apostrophe
 		}
 
+		if len(runeBuffer) == 1 && !literal && !unicode.IsDigit(r) {
+			prefixedIri = true
+		}
+
 		// if bumbed into the border of IRI and not in literal, switch the IRI state
 		if (r == runeLessThan || r == runeGreaterThan) && !literal { // < >
 			iri = !iri
 		}
+
 	}
 
 	// if we're at EOF, we have a final, non-empty, non-terminated word
