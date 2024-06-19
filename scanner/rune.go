@@ -15,6 +15,10 @@ const (
 	runeRightSquareBracket = '\u005D' // ]
 	runeOpeningParenthesis = '\u0028' // (
 	runeClosingParenthesis = '\u0029' // )
+	runeUpperCaseE         = '\u0045' // E
+	runeLowerCaseE         = '\u0065' // e
+	runeHyphen             = '\u002D' // -
+	runePlusSign           = '\u002B' // +
 )
 
 var keyCharacters = []rune{
@@ -25,4 +29,11 @@ var keyCharacters = []rune{
 	runeRightSquareBracket,
 	runeOpeningParenthesis,
 	runeClosingParenthesis,
+}
+
+var numberCharacters = []rune{
+	runeUpperCaseE,
+	runeLowerCaseE,
+	runeHyphen,
+	runePlusSign,
 }

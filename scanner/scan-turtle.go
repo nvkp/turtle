@@ -78,11 +78,11 @@ func splitTurtle(data []byte, atEOF bool) (advance int, token []byte, err error)
 			if unicode.IsDigit(after) {
 				width = width + afterWidth
 				for {
-					digit, digitWidth := utf8.DecodeRune(data[i+width:])
-					if !unicode.IsDigit(digit) {
+					nextRune, runeWidth := utf8.DecodeRune(data[i+width:])
+					if !unicode.IsDigit(nextRune) && !slices.Contains(numberCharacters, nextRune) {
 						break
 					}
-					width = width + digitWidth
+					width = width + runeWidth
 				}
 
 				return i + width, data[start : i+width], nil
