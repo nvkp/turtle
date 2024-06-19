@@ -53,7 +53,7 @@ type collectionItem struct {
 // New accepts a byte slice of the Turtle data and returns a new scanner.Scanner.
 func New(data []byte) *Scanner {
 	counter := &ScanByteCounter{}
-	s := bufio.NewScanner(bytes.NewReader(data))
+	s := newBufioScanner(data)
 	s.Split(counter.SplitFunc())
 
 	return &Scanner{
@@ -153,6 +153,7 @@ func (s *Scanner) Next() bool {
 
 		// ignore the "end of triple" keyword
 		if token == "." {
+			s.curIndex = 0
 			continue
 		}
 
@@ -183,8 +184,7 @@ func (s *Scanner) Next() bool {
 			newData = append(newData, []byte(list.blankNode)...)
 			newData = append(newData, s.data[i:]...)
 			s.data = newData
-			reader := bytes.NewReader(s.data)
-			s.s = bufio.NewScanner(reader)
+			s.s = newBufioScanner(s.data)
 			s.scanByteCounter = &ScanByteCounter{}
 			s.s.Split(s.scanByteCounter.SplitFunc())
 			s.curSubject = list.curSubject
@@ -247,8 +247,7 @@ func (s *Scanner) Next() bool {
 			newData = append(newData, []byte(collectionStart)...)
 			newData = append(newData, s.data[i:]...)
 			s.data = newData
-			reader := bytes.NewReader(s.data)
-			s.s = bufio.NewScanner(reader)
+			s.s = newBufioScanner(s.data)
 			s.scanByteCounter = &ScanByteCounter{}
 			s.s.Split(s.scanByteCounter.SplitFunc())
 
@@ -327,4 +326,10 @@ func (s *Scanner) inCollection() bool {
 	}
 
 	return s.colls[len(s.colls)-1].start > s.bnLists[len(s.bnLists)-1].start
+}
+
+func newBufioScanner(data []byte) *bufio.Scanner {
+	s := bufio.NewScanner(bytes.NewReader(data))
+	s.Buffer(data, 0)
+	return s
 }

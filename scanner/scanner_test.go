@@ -1280,6 +1280,58 @@ var scanTestCases = map[string]struct {
 			{"https://brickschema.org/schema/Brick#PM2.5_Sensor", "https://brickschema.org/schema/Brick#hasQuantity", `https://brickschema.org/schema/Brick#PM2.5_Concentration`},
 		},
 	},
+	"float-with-exponents": {
+		data: []byte(`
+		@prefix unit: <http://qudt.org/vocab/unit/> .
+		@prefix qudt: <http://qudt.org/schema/qudt/> .
+		@prefix quantitykind: <http://qudt.org/vocab/quantitykind/> .
+		unit:A
+		a qudt:Unit ;
+		qudt:conversionMultiplierSN 1.0E0, 42E3, 1e0, -2.3E-12, +.3e+2 ;
+		qudt:hasQuantityKind quantitykind:TotalCurrent .
+				`),
+		expectedTokens: []string{
+			`@prefix`,
+			`unit:`,
+			`<http://qudt.org/vocab/unit/>`,
+			`.`,
+			`@prefix`,
+			`qudt:`,
+			`<http://qudt.org/schema/qudt/>`,
+			`.`,
+			`@prefix`,
+			`quantitykind:`,
+			`<http://qudt.org/vocab/quantitykind/>`,
+			`.`,
+			`unit:A`,
+			`a`,
+			`qudt:Unit`,
+			`;`,
+			`qudt:conversionMultiplierSN`,
+			`1.0E0`,
+			`,`,
+			`42E3`,
+			`,`,
+			`1e0`,
+			`,`,
+			`-2.3E-12`,
+			`,`,
+			`+.3e+2`,
+			`;`,
+			`qudt:hasQuantityKind`,
+			`quantitykind:TotalCurrent`,
+			`.`,
+		},
+		expectedTriples: [][3]string{
+			{"http://qudt.org/vocab/unit/A", "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", `http://qudt.org/schema/qudt/Unit`},
+			{"http://qudt.org/vocab/unit/A", "http://qudt.org/schema/qudt/conversionMultiplierSN", `1.0E0`},
+			{"http://qudt.org/vocab/unit/A", "http://qudt.org/schema/qudt/conversionMultiplierSN", `42E3`},
+			{"http://qudt.org/vocab/unit/A", "http://qudt.org/schema/qudt/conversionMultiplierSN", `1e0`},
+			{"http://qudt.org/vocab/unit/A", "http://qudt.org/schema/qudt/conversionMultiplierSN", `-2.3E-12`},
+			{"http://qudt.org/vocab/unit/A", "http://qudt.org/schema/qudt/conversionMultiplierSN", `+.3e+2`},
+			{"http://qudt.org/vocab/unit/A", "http://qudt.org/schema/qudt/hasQuantityKind", `http://qudt.org/vocab/quantitykind/TotalCurrent`},
+		},
+	},
 }
 
 func TestScanTurtle(t *testing.T) {
