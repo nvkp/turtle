@@ -1287,7 +1287,7 @@ var scanTestCases = map[string]struct {
 		@prefix quantitykind: <http://qudt.org/vocab/quantitykind/> .
 		unit:A
 		a qudt:Unit ;
-		qudt:conversionMultiplierSN 1.0E0, 42E3, 1e0, -2.3E-12, +.3e+2 ;
+		qudt:conversionMultiplierSN 1.0E0, 1.0E0^^xsd::float, 42E3, 1e0, 1e0^^xsd::integer, -2.3E-12, +.3e+2 ;
 		qudt:hasQuantityKind quantitykind:TotalCurrent .
 				`),
 		expectedTokens: []string{
@@ -1310,9 +1310,13 @@ var scanTestCases = map[string]struct {
 			`qudt:conversionMultiplierSN`,
 			`1.0E0`,
 			`,`,
+			`1.0E0^^xsd::float`,
+			`,`,
 			`42E3`,
 			`,`,
 			`1e0`,
+			`,`,
+			`1e0^^xsd::integer`,
 			`,`,
 			`-2.3E-12`,
 			`,`,
@@ -1325,8 +1329,10 @@ var scanTestCases = map[string]struct {
 		expectedTriples: [][3]string{
 			{"http://qudt.org/vocab/unit/A", "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", `http://qudt.org/schema/qudt/Unit`},
 			{"http://qudt.org/vocab/unit/A", "http://qudt.org/schema/qudt/conversionMultiplierSN", `1.0E0`},
+			{"http://qudt.org/vocab/unit/A", "http://qudt.org/schema/qudt/conversionMultiplierSN", `1.0E0^^xsd::float`},
 			{"http://qudt.org/vocab/unit/A", "http://qudt.org/schema/qudt/conversionMultiplierSN", `42E3`},
 			{"http://qudt.org/vocab/unit/A", "http://qudt.org/schema/qudt/conversionMultiplierSN", `1e0`},
+			{"http://qudt.org/vocab/unit/A", "http://qudt.org/schema/qudt/conversionMultiplierSN", `1e0^^xsd::integer`},
 			{"http://qudt.org/vocab/unit/A", "http://qudt.org/schema/qudt/conversionMultiplierSN", `-2.3E-12`},
 			{"http://qudt.org/vocab/unit/A", "http://qudt.org/schema/qudt/conversionMultiplierSN", `+.3e+2`},
 			{"http://qudt.org/vocab/unit/A", "http://qudt.org/schema/qudt/hasQuantityKind", `http://qudt.org/vocab/quantitykind/TotalCurrent`},
