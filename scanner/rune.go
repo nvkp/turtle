@@ -19,6 +19,7 @@ const (
 	runeLowerCaseE         = '\u0065' // e
 	runeHyphen             = '\u002D' // -
 	runePlusSign           = '\u002B' // +
+	runeCaret              = '\u005E'
 )
 
 var keyCharacters = []rune{
