@@ -1,5 +1,8 @@
 # turtle
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/nvkp/turtle.svg)](https://pkg.go.dev/github.com/nvkp/turtle)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 This [Golang](https://go.dev/) package serves as a serializer and parser of the [Turtle](https://www.w3.org/TR/turtle/) format used for representing [RDF](https://www.w3.org/RDF/) data. This package covers most features of the format's **version 1.1**. 
 
 ## Usage
