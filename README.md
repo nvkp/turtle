@@ -69,7 +69,7 @@ err := turtle.Unmarshal(
 fmt.Println(triple) // {http://e.org/person/Mark_Twain http://e.org/relation/author http://e.org/books/Huckleberry_Finn}
 ```
 
-The `turtle.Unmarshal` function accepts the compact version of Turtle just as the N-triples version of the format where each row corresponds to a single triple. It reads `@base` and `@prefix` forms and extends the IRIs that are filled in the target structure with them. It ignores Turtle comments, labels and data types. The keyword `a` gets replaced by `http://www.w3.org/1999/02/22-rdf-syntax-ns#type` IRI.
+The `turtle.Unmarshal` function accepts the compact version of Turtle just as the N-triples version of the format where each row corresponds to a single triple. It reads `@base` and `@prefix` forms and extends the IRIs that are filled in the target structure with them. It ignores Turtle comments, labels and data types. The keyword `a` gets replaced by `http://www.w3.org/1999/02/22-rdf-syntax-ns#type` IRI. The function is able to handle multiline literals, literal floats, blank nodes, blank node lists and RDF collections.
 
 ```golang
 var triples = []struct {
@@ -86,6 +86,33 @@ rdf := `
 	rel:enemyOf <http://e.org/spiderman> ;
 	a foaf:Person ;
 	foaf:name "Green Goblin" .
+`
+
+err := turtle.Unmarshal(
+	[]byte(rdf),
+	&triples,
+)
+```
+
+Both `turtle.Marshal(v interface{}) ([]byte, error)` and `turtle.Unmarshal(data []byte, v interface{}) error` functions can handle two optional field tags `datatype` and `label` annotating the object literals. The struct's attributes with those field tags can either be pointers to string or string values.
+
+```golang
+var triples = []struct {
+	Subject   string `turtle:"subject"`
+	Predicate string `turtle:"predicate"`
+	Object    string `turtle:"object"`
+	Label     string `turtle:"label"`
+	DataType  string `turtle:"datatype"`
+}{}
+
+rdf := `
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix rel: <http://www.perceive.net/schemas/relationship/> .
+
+<http://e.org/green-goblin>
+	rel:enemyOf <http://e.org/spiderman> ;
+	a foaf:Person ;
+	foaf:name "Green Goblin"^^xsd:string , "Zelený Goblin"@cs .
 `
 
 err := turtle.Unmarshal(

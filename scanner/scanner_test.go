@@ -1368,7 +1368,12 @@ func TestNext(t *testing.T) {
 				if !ok {
 					break
 				}
-				actual = append(actual, s.Triple())
+				// temporary fix
+				triple := s.Triple()
+				tripleSlice := triple[:3]
+				var threeItemSlice [3]string
+				copy(threeItemSlice[:], tripleSlice)
+				actual = append(actual, threeItemSlice)
 			}
 			assert.Equal(t, tc.expectedTriples, actual, "scanner should have created correct turtle triples")
 		})

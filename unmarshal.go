@@ -12,6 +12,8 @@ const (
 	subject int = iota
 	predicate
 	object
+	label
+	datatype
 )
 
 var (
@@ -115,7 +117,9 @@ func unmarshalStruct(s *scanner.Scanner, v reflect.Value) error {
 	if v.Kind() != reflect.Struct {
 		return errors.New("value not struct")
 	}
-	t := s.Triple()
+	t := s.TripleWithAnnotations()
+	numField := v.NumField()
+	_ = numField
 	for i := 0; i < v.NumField(); i++ {
 		field := v.Field(i)
 
@@ -139,6 +143,10 @@ func unmarshalStruct(s *scanner.Scanner, v reflect.Value) error {
 			part = predicate
 		case "object":
 			part = object
+		case "label":
+			part = label
+		case "datatype":
+			part = datatype
 		}
 		word = t[part]
 
@@ -152,6 +160,11 @@ func unmarshalStruct(s *scanner.Scanner, v reflect.Value) error {
 			pointerType := field.Type().Elem()
 			// check that the field is pointer to string
 			if pointerType.Kind() != reflect.String {
+				continue
+			}
+
+			// omit empty strings
+			if len(word) == 0 {
 				continue
 			}
 

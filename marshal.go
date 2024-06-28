@@ -64,7 +64,7 @@ func marshal(g *graph.Graph, v reflect.Value) error {
 }
 
 func marshalStruct(g *graph.Graph, v reflect.Value) error {
-	var t [3]string
+	var t [5]string
 
 	for i := 0; i < v.NumField(); i++ {
 		field := v.Field(i)
@@ -84,6 +84,10 @@ func marshalStruct(g *graph.Graph, v reflect.Value) error {
 			part = predicate
 		case "object":
 			part = object
+		case "label":
+			part = label
+		case "datatype":
+			part = datatype
 		}
 
 		var word string
@@ -92,7 +96,7 @@ func marshalStruct(g *graph.Graph, v reflect.Value) error {
 			word = field.String()
 		}
 		// is field is pointer to string use the pointed value
-		if field.Kind() == reflect.Pointer && field.Type().Elem().Kind() == reflect.String {
+		if field.Kind() == reflect.Pointer && field.Type().Elem().Kind() == reflect.String && field.Elem().Kind() == reflect.String {
 			word = field.Elem().String()
 		}
 
@@ -113,7 +117,7 @@ func marshalStruct(g *graph.Graph, v reflect.Value) error {
 	}
 
 	// accept the extracted triple to graph
-	g.Accept(t)
+	g.AcceptWithAnnotations(t)
 
 	return nil
 }

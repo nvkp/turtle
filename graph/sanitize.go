@@ -13,6 +13,20 @@ const (
 	runeQuotation  = '\u0022' // "
 )
 
+func sanitizeObject(obj object) string {
+	item := sanitize(obj.item)
+
+	if obj.label != "" {
+		return fmt.Sprintf("%s@%s", item, obj.label)
+	}
+
+	if obj.datatype != "" {
+		return fmt.Sprintf("%s^^%s", item, obj.datatype)
+	}
+
+	return item
+}
+
 func sanitize(str string) string {
 	if len(str) == 0 {
 		return str
@@ -22,18 +36,14 @@ func sanitize(str string) string {
 		return fmt.Sprintf("<%s>", str)
 	}
 
+	if isBlankNode(str) {
+		return str
+	}
+
 	if !isBlankNode(str) {
-		literalEdge := `"`
+		edge := literalEdge(str)
 
-		if strings.ContainsRune(str, runeNewLine) {
-			if strings.ContainsRune(str, runeApostrophe) {
-				literalEdge = `"""`
-			} else {
-				literalEdge = `'''`
-			}
-		}
-
-		return fmt.Sprintf("%s%s%s", literalEdge, str, literalEdge)
+		return fmt.Sprintf("%s%s%s", edge, str, edge)
 	}
 
 	return str
@@ -73,4 +83,22 @@ func isValidIRIChar(char rune) bool {
 		unicode.Is(unicode.Han, char) || unicode.Is(unicode.Hiragana, char) ||
 		unicode.Is(unicode.Katakana, char) || unicode.Is(unicode.Latin, char) ||
 		unicode.Is(unicode.Arabic, char) || unicode.Is(unicode.Cyrillic, char)
+}
+
+// TODO consts
+
+func literalEdge(str string) string {
+	if !strings.ContainsRune(str, runeNewLine) {
+		if !strings.ContainsRune(str, runeQuotation) {
+			return `"`
+		}
+
+		return `'`
+	}
+
+	if strings.ContainsRune(str, runeApostrophe) {
+		return `"""`
+	}
+
+	return `'''`
 }
