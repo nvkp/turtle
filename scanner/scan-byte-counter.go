@@ -2,11 +2,11 @@ package scanner
 
 import "bufio"
 
-type ScanByteCounter struct {
+type scanByteCounter struct {
 	BytesRead int
 }
 
-func (s *ScanByteCounter) SplitFunc() bufio.SplitFunc {
+func (s *scanByteCounter) splitFunc() bufio.SplitFunc {
 	return func(data []byte, atEOF bool) (int, []byte, error) {
 		adv, tok, err := splitTurtle(data, atEOF)
 		s.BytesRead += adv

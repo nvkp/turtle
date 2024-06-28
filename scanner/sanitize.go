@@ -2,16 +2,16 @@ package scanner
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 )
 
-var (
-	regexDataType = regexp.MustCompile(`(\".+\")\^\^.+`)
-	regexLabel    = regexp.MustCompile(`(\".+\")@.+`)
+const (
+	dataTypeDelimiter = "^^"
+	labelDelimiter    = "@"
 )
 
-func (s *Scanner) sanitize(token string) string {
+func (s *Scanner) sanitize(token string) (string, string, string) {
+	var label, datatype string
 	// apply the stored prefixes
 	for prefix, value := range s.prefixes {
 		if !strings.HasPrefix(token, fmt.Sprintf("%s:", prefix)) {
@@ -26,14 +26,20 @@ func (s *Scanner) sanitize(token string) string {
 		token = fmt.Sprintf("%s%s", s.base, token[2:])
 	}
 
-	// remove data type suffix
-	if regexDataType.MatchString(token) {
-		token = regexDataType.ReplaceAllString(token, `$1`)
+	// extract data type suffix
+	lastDataTypeIndex := lastIndex(token, dataTypeDelimiter)
+	if lastDataTypeIndex != -1 {
+		// Split the string into two parts
+		datatype = token[lastDataTypeIndex+len(dataTypeDelimiter):]
+		token = token[:lastDataTypeIndex]
 	}
 
-	// remove label
-	if regexLabel.MatchString(token) {
-		token = regexLabel.ReplaceAllString(token, `$1`)
+	// extract label suffix
+	lastLabelIndex := lastIndex(token, labelDelimiter)
+	if lastLabelIndex != -1 {
+		// Split the string into two parts
+		label = token[lastLabelIndex+len(labelDelimiter):]
+		token = token[:lastLabelIndex]
 	}
 
 	// replace "a" keyword with rdf:type predicate
@@ -42,7 +48,7 @@ func (s *Scanner) sanitize(token string) string {
 	}
 
 	// trim token
-	return trim(token)
+	return trim(token), label, datatype
 }
 
 var trimmedPairs = []struct {
@@ -89,4 +95,33 @@ func trim(token string) string {
 	}
 
 	return token
+}
+
+var literalDelimiters = []string{
+	`"""`,
+	`'''`,
+	`"`,
+	`'`,
+}
+
+func lastIndex(token string, annotation string) int {
+	for _, delimiter := range literalDelimiters {
+		if !strings.HasPrefix(token, delimiter) {
+			continue
+		}
+
+		lastDelimiterIndex := strings.LastIndex(token, delimiter)
+		if lastDelimiterIndex == 0 {
+			continue
+		}
+
+		lastAnnotationIndex := strings.LastIndex(token, annotation)
+
+		if lastAnnotationIndex < lastDelimiterIndex {
+			continue
+		}
+
+		return lastAnnotationIndex
+	}
+	return -1
 }

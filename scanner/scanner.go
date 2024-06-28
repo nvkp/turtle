@@ -14,9 +14,9 @@ var regexBlankNode = regexp.MustCompile(`_:.+`)
 // It keeps information about prefixes and base of the provided graph and
 // the next triple to be read.
 type Scanner struct {
-	t                [][3]string
+	t                [][5]string
 	data             []byte
-	scanByteCounter  *ScanByteCounter
+	scanByteCounter  *scanByteCounter
 	s                *bufio.Scanner
 	base             string
 	prefixes         map[string]string
@@ -46,21 +46,23 @@ type collection struct {
 }
 
 type collectionItem struct {
-	item      string
+	token     string
+	label     string
+	datatype  string
 	blankNode string
 }
 
 // New accepts a byte slice of the Turtle data and returns a new scanner.Scanner.
 func New(data []byte) *Scanner {
-	counter := &ScanByteCounter{}
+	counter := &scanByteCounter{}
 	s := newBufioScanner(data)
-	s.Split(counter.SplitFunc())
+	s.Split(counter.splitFunc())
 
 	return &Scanner{
 		data:            data,
 		scanByteCounter: counter,
 		s:               s,
-		t:               make([][3]string, 0),
+		t:               make([][5]string, 0),
 		prefixes:        make(map[string]string),
 		blankNodes:      make(map[string]struct{}),
 		bnLists:         make([]blankNodeList, 0),
@@ -185,8 +187,8 @@ func (s *Scanner) Next() bool {
 			newData = append(newData, s.data[i:]...)
 			s.data = newData
 			s.s = newBufioScanner(s.data)
-			s.scanByteCounter = &ScanByteCounter{}
-			s.s.Split(s.scanByteCounter.SplitFunc())
+			s.scanByteCounter = &scanByteCounter{}
+			s.s.Split(s.scanByteCounter.splitFunc())
 			s.curSubject = list.curSubject
 			s.curPredicate = list.curPredicate
 			s.curIndex = list.curIndex
@@ -209,8 +211,11 @@ func (s *Scanner) Next() bool {
 		}
 
 		if token != ")" && s.inCollection() {
+			token, label, datatype := s.sanitize(token)
 			item := collectionItem{
-				item:      s.sanitize(token),
+				token:     token,
+				label:     label,
+				datatype:  datatype,
 				blankNode: s.newBlankNode(),
 			}
 
@@ -229,13 +234,13 @@ func (s *Scanner) Next() bool {
 
 			for i, item := range lastCollection.items {
 				// rdf first
-				s.t = append(s.t, [3]string{item.blankNode, rdfFirst, item.item})
+				s.t = append(s.t, [5]string{item.blankNode, rdfFirst, item.token, item.label, item.datatype})
 				// rdf rest
 				rest := rdfNil
 				if i < len(lastCollection.items)-1 {
 					rest = lastCollection.items[i+1].blankNode
 				}
-				s.t = append(s.t, [3]string{item.blankNode, rdfRest, rest})
+				s.t = append(s.t, [5]string{item.blankNode, rdfRest, rest, "", ""})
 			}
 
 			collectionStart := rdfNilInTurtle
@@ -248,8 +253,8 @@ func (s *Scanner) Next() bool {
 			newData = append(newData, s.data[i:]...)
 			s.data = newData
 			s.s = newBufioScanner(s.data)
-			s.scanByteCounter = &ScanByteCounter{}
-			s.s.Split(s.scanByteCounter.SplitFunc())
+			s.scanByteCounter = &scanByteCounter{}
+			s.s.Split(s.scanByteCounter.splitFunc())
 
 			s.curIndex = lastCollection.curIndex
 			s.curSubject = lastCollection.curSubject
@@ -262,7 +267,7 @@ func (s *Scanner) Next() bool {
 			continue
 		}
 
-		token = s.sanitize(token)
+		token, label, datatype := s.sanitize(token)
 
 		// record blank node
 		if regexBlankNode.MatchString(token) {
@@ -285,7 +290,7 @@ func (s *Scanner) Next() bool {
 
 		// handle object
 		if s.curIndex == 2 {
-			s.t = append(s.t, [3]string{s.curSubject, s.curPredicate, token})
+			s.t = append(s.t, [5]string{s.curSubject, s.curPredicate, token, label, datatype})
 			s.curIndex = 0
 			return true
 		}
@@ -296,6 +301,14 @@ func (s *Scanner) Next() bool {
 func (s *Scanner) Triple() [3]string {
 	if len(s.t) == 0 {
 		return [3]string{}
+	}
+	return [3]string{s.t[0][0], s.t[0][1], s.t[0][2]}
+}
+
+// TripleWithAnnotations returns the next triple with label and datatype
+func (s *Scanner) TripleWithAnnotations() [5]string {
+	if len(s.t) == 0 {
+		return [5]string{}
 	}
 	return s.t[0]
 }
