@@ -35,9 +35,3 @@ jobs:
       with:
         # Configure action using config file (option 1)
         config: ./.testcoverage.yml
-        ## when token is not specified (value '') this feature is turned off
-        ## in this example badge is created and committed only for master branch
-        git-token: ${{ github.ref_name == 'master' && secrets.GITHUB_TOKEN || '' }}
-        ## name of branch where badges are stored
-        ## ideally this should be orphan branch (see below how to create this branch)
-        git-branch: badges 
