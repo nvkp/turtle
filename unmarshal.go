@@ -65,7 +65,8 @@ func unmarshal(s *scanner.Scanner, v reflect.Value) error {
 		if !ok {
 			return nil
 		}
-		return unmarshalStruct(s, v)
+		err, _ := unmarshalStruct(s, v)
+		return err
 	}
 
 	return nil
@@ -81,6 +82,7 @@ func unmarshalSlice(s *scanner.Scanner, v reflect.Value) error {
 	for s.Next() {
 		var item reflect.Value
 		var err error
+		var ok bool
 
 		switch itemType.Kind() {
 		case reflect.Pointer:
@@ -88,18 +90,22 @@ func unmarshalSlice(s *scanner.Scanner, v reflect.Value) error {
 			// reflect pointer to element zero value and call unmarshalStruct on
 			// the pointer's element
 			item = reflect.New(itemType.Elem())
-			err = unmarshalStruct(s, item.Elem())
+			err, ok = unmarshalStruct(s, item.Elem())
 		case reflect.Struct:
 			// if slice contains structs, create item as
 			// zero value struct and call unmarshalStruct on it
 			item = reflect.New(itemType).Elem()
-			err = unmarshalStruct(s, item)
+			err, ok = unmarshalStruct(s, item)
 		default:
 			return errors.New("invalid slice's item type")
 		}
 
 		if err != nil {
 			return err
+		}
+
+		if !ok {
+			break
 		}
 
 		if !v.CanSet() {
@@ -113,18 +119,34 @@ func unmarshalSlice(s *scanner.Scanner, v reflect.Value) error {
 	return nil
 }
 
-func unmarshalStruct(s *scanner.Scanner, v reflect.Value) error {
+func unmarshalStruct(s *scanner.Scanner, v reflect.Value) (error, bool) {
 	if v.Kind() != reflect.Struct {
-		return errors.New("value not struct")
+		return errors.New("value not struct"), false
 	}
-	t := s.TripleWithAnnotations()
+
+	var t [5]string
+
+	// prevent empty structs from being generated from pragmas
+outer:
+	for {
+		t = s.TripleWithAnnotations()
+		for _, k := range t {
+			if k != "" {
+				break outer
+			}
+		}
+		if !s.Next() {
+			return nil, false
+		}
+	}
+
 	numField := v.NumField()
 	_ = numField
 	for i := 0; i < v.NumField(); i++ {
 		field := v.Field(i)
 
 		if !field.CanSet() {
-			return errors.New("field cannot be changed")
+			return errors.New("field cannot be changed"), false
 		}
 
 		// get the tag value
@@ -147,35 +169,49 @@ func unmarshalStruct(s *scanner.Scanner, v reflect.Value) error {
 			part = label
 		case "datatype":
 			part = datatype
+		case "base", "prefix":
+			part = -1
 		}
-		word = t[part]
+
+		if part >= 0 {
+			word = t[part]
+		}
 
 		// if field is string set value
-		if field.Kind() == reflect.String {
-			field.SetString(word)
-		}
-
-		// if field is pointer
-		if field.Kind() == reflect.Pointer {
+		if field.Kind() == reflect.String && tag != "prefix" {
+			if tag == "base" {
+				field.SetString(s.Base())
+			} else {
+				field.SetString(word)
+			}
+		} else if field.Kind() == reflect.Map && tag == "prefix" && isMap(field.Type()) {
+			field.Set(reflect.ValueOf(s.Prefixes()))
+		} else if field.Kind() == reflect.Pointer {
 			pointerType := field.Type().Elem()
-			// check that the field is pointer to string
-			if pointerType.Kind() != reflect.String {
-				continue
-			}
-
-			// omit empty strings
-			if len(word) == 0 {
-				continue
-			}
-
 			// create new reflect value of pointer to string
-			stringValue := reflect.New(pointerType)
-			// set value to the pointed string
-			stringValue.Elem().SetString(word)
-			// set the pointer as value of the struct field
-			field.Set(stringValue)
+			value := reflect.New(pointerType)
+
+			// check that the field is pointer to string
+			if pointerType.Kind() == reflect.String {
+
+				// omit empty strings
+				if len(word) == 0 {
+					continue
+				}
+
+				// set value to the pointed string
+				value.Elem().SetString(word)
+				// set the pointer as value of the struct field
+				field.Set(value)
+			} else if isMap(pointerType) {
+				field.Set(value)
+			}
 		}
 	}
 
-	return nil
+	return nil, true
+}
+
+func isMap(value reflect.Type) bool {
+	return value.Key().Kind() == reflect.String && value.Elem().Kind() == reflect.String
 }

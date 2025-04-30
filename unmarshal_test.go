@@ -129,3 +129,25 @@ func TestUnmarshalNotAPointer(t *testing.T) {
 	err := turtle.Unmarshal(data, target)
 	assert.ErrorIs(t, err, turtle.ErrNoPointerValue, "function Unmarshal should have returned correct error")
 }
+
+func TestUnmarshalBaseAndPrefixes(t *testing.T) {
+	target := make([]tripleWithMetadata, 0)
+	data := []byte(`
+@base <http://example.org/> .
+@prefix books: <https://amazon.com/> .
+</person/Mark_Twain> </relation/author> <books:Huckleberry_Finn> .`)
+
+	expected := []tripleWithMetadata{
+		{
+			Base:      "http://example.org/",
+			Prefixes:  map[string]string{"books": "https://amazon.com/"},
+			Subject:   "/person/Mark_Twain",
+			Predicate: "/relation/author",
+			Object:    "books:Huckleberry_Finn",
+		},
+	}
+
+	err := turtle.Unmarshal(data, &target)
+	assert.NoError(t, err, "got an error unmarshaling turtle with base and prefixes")
+	assert.Equal(t, expected, target, "not equal to expected data")
+}

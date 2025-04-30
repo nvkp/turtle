@@ -29,6 +29,14 @@ type namedTypeTriple struct {
 	o object    `turtle:"object"`
 }
 
+type tripleWithMetadata struct {
+	Subject   string            `turtle:"subject"`
+	Predicate string            `turtle:"predicate"`
+	Object    string            `turtle:"object"`
+	Prefixes  map[string]string `turtle:"prefix"`
+	Base      string            `turtle:"base"`
+}
+
 var marshalTestCases = map[string]struct {
 	triples   interface{}
 	expString string
