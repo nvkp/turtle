@@ -3,7 +3,7 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/nvkp/turtle.svg)](https://pkg.go.dev/github.com/nvkp/turtle)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-This [Golang](https://go.dev/) package serves as a serializer and parser of the [Turtle](https://www.w3.org/TR/turtle/) format used for representing [RDF](https://www.w3.org/RDF/) data. This package covers most features of the format's **version 1.1**. 
+This [Golang](https://go.dev/) package serves as a serializer and parser of the [Turtle](https://www.w3.org/TR/turtle/) format used for representing [RDF](https://www.w3.org/RDF/) data. This package covers most features of the format's **version 1.1**.
 
 ## Usage
 
@@ -13,7 +13,7 @@ To add this package as a dependency to you Golang module, run:
 go get github.com/nvkp/turtle
 ```
 
-The API of the package follows the Golang's traditional pattern for serializing and parsing. The serializing operation happens through the `turtle.Marshal(v interface{}) ([]byte, error)` function. The function accepts the to-be-serialized data as an empty interface and returns the byte slice with the result and possible error value. 
+The API of the package follows the Golang's traditional pattern for serializing and parsing. The serializing operation happens through the `turtle.Marshal(v interface{}) ([]byte, error)` function. The function accepts the to-be-serialized data as an empty interface and returns the byte slice with the result and possible error value.
 
 It is able to handle single struct, struct, a slice, an array or a pointer to all three. The fields of the structs passed to the function have to be annotated by tags defining which of the fields correspond to which part of the RDF triple.
 
@@ -74,19 +74,24 @@ fmt.Println(triple) // {http://e.org/person/Mark_Twain http://e.org/relation/aut
 
 The `turtle.Unmarshal` function accepts the compact version of Turtle just as the N-triples version of the format where each row corresponds to a single triple. It reads `@base` and `@prefix` forms and extends the IRIs that are filled in the target structure with them. It ignores Turtle comments, labels and data types. The keyword `a` gets replaced by `http://www.w3.org/1999/02/22-rdf-syntax-ns#type` IRI. The function is able to handle multiline literals, literal floats, blank nodes, blank node lists and RDF collections.
 
+If the `turtle:"base"` struct tag points at a `string` or `turtle:"prefix"` with `map[string]string` is provided, those fields will be filled in with the base and collection of prefixes respectively. This is per-struct and any future pragma encountered will only effect the following triples.
+
 ```golang
 var triples = []struct {
-	Subject   string `turtle:"subject"`
-	Predicate string `turtle:"predicate"`
-	Object    string `turtle:"object"`
+	Subject   string            `turtle:"subject"`
+	Predicate string            `turtle:"predicate"`
+	Object    string            `turtle:"object"`
+    Prefixes  map[string]string `turtle:"prefix"`
+    Base	  string            `turtle:"base"`
 }{}
 
 rdf := `
+@base <http://e.org/> .
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 @prefix rel: <http://www.perceive.net/schemas/relationship/> .
 
-<http://e.org/green-goblin>
-	rel:enemyOf <http://e.org/spiderman> ;
+</green-goblin>
+	rel:enemyOf </spiderman> ;
 	a foaf:Person ;
 	foaf:name "Green Goblin" .
 `
@@ -126,9 +131,9 @@ err := turtle.Unmarshal(
 
 ## Existing Alternatives
 
-There is at least one Golang package available on Github that lets you parse and serialize Turtle data: [github.com/deiu/rdf2go](https://github.com/deiu/rdf2go). Its API does not comply with the traditional way of parsing and serializing in Golang programs. It defines its own types appearing in the RDF domain as Triple, Graph, etc. 
+There is at least one Golang package available on Github that lets you parse and serialize Turtle data: [github.com/deiu/rdf2go](https://github.com/deiu/rdf2go). Its API does not comply with the traditional way of parsing and serializing in Golang programs. It defines its own types appearing in the RDF domain as Triple, Graph, etc.
 
-When a user needs a package that would parse and serialize Turtle data, it is fair to suppose that the user has already defined its own RDF data types as triple or graph. In that case for using the above mentioned package, user has to create a logic for converting its triple data types into the package's data types and adding them to the package's graph structure. 
+When a user needs a package that would parse and serialize Turtle data, it is fair to suppose that the user has already defined its own RDF data types as triple or graph. In that case for using the above mentioned package, user has to create a logic for converting its triple data types into the package's data types and adding them to the package's graph structure.
 
 More "Golang way" that this package offers is to annotated the user's already defined structures and the package would read these annotations and behave accordingly.
 
@@ -140,7 +145,7 @@ This benchmark compares parsing and serializing operations of the [github.com/de
 goos: linux
 goarch: amd64
 pkg: github.com/nvkp/turtletest
-cpu: AMD Ryzen 7 PRO 5850U with Radeon Graphics     
+cpu: AMD Ryzen 7 PRO 5850U with Radeon Graphics
 BenchmarkMarshalTurtle-16         205250              5801 ns/op
 BenchmarkMarshalRDF2Go-16         163112              6384 ns/op
 BenchmarkUnmarshalTurtle-16            9         123448964 ns/op
