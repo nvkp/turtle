@@ -13,7 +13,7 @@ func Equal(t *testing.T, expected, actual interface{}, msg string, args ...inter
 		return
 	}
 
-	t.Errorf("%s: expected: %s\n actual: %s", fmt.Sprintf(msg, args...), expected, actual)
+	t.Errorf("%s: expected: %#v\n actual: %#v", fmt.Sprintf(msg, args...), expected, actual)
 }
 
 func NoError(t *testing.T, err error, msg string, args ...interface{}) {
