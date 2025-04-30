@@ -1,7 +1,6 @@
 package turtle
 
 import (
-	"fmt"
 	"reflect"
 
 	"errors"
@@ -34,11 +33,7 @@ var (
 // triples are sorted alphabetically first by subjects, then by predicates
 // and then by objects.
 func Marshal(v interface{}) ([]byte, error) {
-	g := graph.New()
-	if err := marshal(g, reflect.ValueOf(v)); err != nil {
-		return nil, fmt.Errorf("marshal: %w", err)
-	}
-	return g.Bytes()
+	return (&Config{}).Marshal(v)
 }
 
 func marshal(g *graph.Graph, v reflect.Value) error {

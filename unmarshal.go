@@ -2,7 +2,6 @@ package turtle
 
 import (
 	"errors"
-	"fmt"
 	"reflect"
 
 	"github.com/nvkp/turtle/scanner"
@@ -37,21 +36,7 @@ var (
 // comments, labels and data types. The keyword a gets
 // replaced by http://www.w3.org/1999/02/22-rdf-syntax-ns#type IRI.
 func Unmarshal(data []byte, v interface{}) error {
-	if v == nil {
-		return ErrNilValue
-	}
-
-	rv := reflect.ValueOf(v)
-	if rv.Kind() != reflect.Ptr {
-		return ErrNoPointerValue
-	}
-
-	err := unmarshal(scanner.New(data), rv)
-	if err != nil {
-		return fmt.Errorf("unmarshal: %v", err)
-	}
-
-	return nil
+	return (&Config{}).Unmarshal(data, v)
 }
 
 func unmarshal(s *scanner.Scanner, v reflect.Value) error {

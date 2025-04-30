@@ -13,8 +13,8 @@ const (
 	runeQuotation  = '\u0022' // "
 )
 
-func sanitizeObject(obj object) string {
-	item := sanitize(obj.item)
+func (g *Graph) sanitizeObject(obj object) string {
+	item := g.sanitize(obj.item, false)
 
 	if obj.label != "" {
 		return fmt.Sprintf("%s@%s", item, obj.label)
@@ -27,12 +27,28 @@ func sanitizeObject(obj object) string {
 	return item
 }
 
-func sanitize(str string) string {
+func (g *Graph) sanitize(str string, predicate bool) string {
 	if len(str) == 0 {
 		return str
 	}
 
 	if isIRI(str) {
+		if g.options.ResolveURLs {
+			for key, prefix := range g.options.Prefixes {
+				if strings.HasPrefix(str, prefix) {
+					return fmt.Sprintf("%s:%s", key, strings.TrimPrefix(str, prefix))
+				}
+			}
+
+			if g.options.Base != "" && strings.HasPrefix(str, g.options.Base) {
+				if g.options.Base == str {
+					str = "."
+				}
+
+				return fmt.Sprintf("<%s>", strings.TrimPrefix(str, g.options.Base))
+			}
+		}
+
 		return fmt.Sprintf("<%s>", str)
 	}
 
@@ -40,7 +56,7 @@ func sanitize(str string) string {
 		return str
 	}
 
-	if !isBlankNode(str) {
+	if !isBlankNode(str) && !predicate {
 		edge := literalEdge(str)
 
 		return fmt.Sprintf("%s%s%s", edge, str, edge)

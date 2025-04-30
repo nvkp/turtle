@@ -1,6 +1,7 @@
 package turtle_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/nvkp/turtle"
@@ -261,4 +262,61 @@ func TestMarshal(t *testing.T) {
 			assert.ErrorIs(t, err, tc.expErr, "Marshal function should have returned a correct error")
 		})
 	}
+}
+
+func TestMarshalOptions(t *testing.T) {
+	trip := triple{
+		Subject:   "http://example.org/person/Mark_Twain",
+		Predicate: "http://example.org/relation/author",
+		Object:    "http://example.org/books/Huckleberry_Finn",
+	}
+
+	c := turtle.Config{
+		Base: "http://example.org",
+		Prefixes: map[string]string{
+			"book": "http://example.org/books/",
+		},
+	}
+
+	out, err := c.Marshal(trip)
+	assert.NoError(t, err, "no error was expected")
+	assert.Equal(t, strings.TrimSpace(string(out)), strings.TrimSpace(`
+@base <http://example.org> .
+@prefix book: <http://example.org/books/> .
+<http://example.org/person/Mark_Twain> <http://example.org/relation/author> <http://example.org/books/Huckleberry_Finn> .
+`), "output was not equal")
+
+	c.ResolveURLs = true
+
+	out, err = c.Marshal(trip)
+	assert.NoError(t, err, "no error was expected")
+	assert.Equal(t, strings.TrimSpace(string(out)), strings.TrimSpace(`
+@base <http://example.org> .
+@prefix book: <http://example.org/books/> .
+</person/Mark_Twain> </relation/author> book:Huckleberry_Finn .
+`), "output was not equal")
+
+	// check for weird rdf-isms like using a blank anchor as a prefix
+
+	c = turtle.Config{
+		Base: "http://example.org",
+		Prefixes: map[string]string{
+			"book": "http://example.org/books#",
+		},
+		ResolveURLs: true,
+	}
+
+	trip = triple{
+		Subject:   "http://example.org/person/Mark_Twain",
+		Predicate: "http://example.org/relation/author",
+		Object:    "http://example.org/books#Huckleberry_Finn",
+	}
+
+	out, err = c.Marshal(trip)
+	assert.NoError(t, err, "no error was expected")
+	assert.Equal(t, strings.TrimSpace(string(out)), strings.TrimSpace(`
+@base <http://example.org> .
+@prefix book: <http://example.org/books#> .
+</person/Mark_Twain> </relation/author> book:Huckleberry_Finn .
+`), "output was not equal")
 }
