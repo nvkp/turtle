@@ -7,21 +7,18 @@ import (
 
 // Options changes the behavior of the graph. It is passed to NewWithOptions.
 type Options struct {
-	// If true, will normalize URLs around the Base parameter and Prefixes for
-	// output.
-	ResolveURLs bool
-	// If set, will output a `@base` pragma at the start and if ResolveURLs is
-	// true will normalize all URLs that start with the base to their relative
-	// components.
+	// If set, will output a `@base` pragma at the start. Will normalize all URLs
+	// that start with the base to their relative components.
 	Base string
-	// If set, if ResolveURLs is true, any encountering of the prefix URL prefixes
-	// will be normalized to use the prefix. Additionally, @prefix lines are
-	// output at the top of the document for each one.
+	// If set, any encountering of the prefix URL prefixes will be normalized to
+	// use the prefix. Additionally, @prefix lines are output at the top of the
+	// document for each one.
 	Prefixes map[string]string
 }
 
 type object struct {
 	item     string
+	typ      string
 	datatype string
 	label    string
 }
@@ -54,8 +51,8 @@ func (g *Graph) Accept(t [3]string) error {
 
 // AcceptWithAnnotations stores a new triple with eventual label and data type
 // of the object literal to the graph.
-func (g *Graph) AcceptWithAnnotations(t [5]string) error {
-	return g.accept(t[0], t[1], object{item: t[2], label: t[3], datatype: t[4]})
+func (g *Graph) AcceptWithAnnotations(t [6]string) error {
+	return g.accept(t[0], t[1], object{item: t[2], label: t[3], datatype: t[4], typ: t[5]})
 }
 
 func (g *Graph) accept(sub string, pred string, obj object) error {
@@ -112,7 +109,7 @@ func (g *Graph) Bytes() ([]byte, error) {
 
 	subjects := g.sortSubjects()
 	for _, subject := range subjects {
-		b = append(b, []byte(fmt.Sprintf("%s ", g.sanitize(subject, false)))...)
+		b = append(b, []byte(fmt.Sprintf("%s ", g.sanitize(subject, "iri", false)))...)
 
 		predicates := sortPredicates(g.m[subject])
 
@@ -127,14 +124,14 @@ func (g *Graph) Bytes() ([]byte, error) {
 			// when single predicate for a subject
 			if len(predicates) == 1 {
 				// write the predicate
-				b = append(b, []byte(fmt.Sprintf("%s ", g.sanitize(predicate, true)))...)
+				b = append(b, []byte(fmt.Sprintf("%s ", g.sanitize(predicate, "iri", true)))...)
 				// write the predicate's objects
 				g.writeObjects(&b, objects)
 				continue
 			}
 
 			// when multiple predicates for subject write predicate on a new line with indentation
-			b = append(b, []byte(fmt.Sprintf("\n\t%s ", g.sanitize(predicate, true)))...)
+			b = append(b, []byte(fmt.Sprintf("\n\t%s ", g.sanitize(predicate, "iri", true)))...)
 
 			// write the predicate's objects
 			g.writeObjects(&b, objects)

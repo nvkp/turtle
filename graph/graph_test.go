@@ -16,8 +16,8 @@ var graphTestCases = map[string]struct {
 			{"a", "b", "c"},
 			{"c", "d", "e"},
 		},
-		expected: []byte(`"a" b "c" .
-"c" d "e" .
+		expected: []byte(`<a> <b> "c" .
+<c> <d> "e" .
 `),
 	},
 	"subject_with_two_predicates": {
@@ -25,9 +25,9 @@ var graphTestCases = map[string]struct {
 			{"a", "b", "c"},
 			{"a", "c", "e"},
 		},
-		expected: []byte(`"a" 
-	b "c" ;
-	c "e" .
+		expected: []byte(`<a> 
+	<b> "c" ;
+	<c> "e" .
 `),
 	},
 	"predicate_with_two_objects": {
@@ -35,7 +35,7 @@ var graphTestCases = map[string]struct {
 			{"a", "b", "c"},
 			{"a", "b", "d"},
 		},
-		expected: []byte(`"a" b "c", "d" .
+		expected: []byte(`<a> <b> "c", "d" .
 `),
 	},
 	"two_predicates_with_two_objects": {
@@ -45,9 +45,9 @@ var graphTestCases = map[string]struct {
 			{"a", "e", "c"},
 			{"a", "e", "d"},
 		},
-		expected: []byte(`"a" 
-	b "c", "d" ;
-	e "c", "d" .
+		expected: []byte(`<a> 
+	<b> "c", "d" ;
+	<e> "c", "d" .
 `),
 	},
 }
@@ -63,7 +63,7 @@ func TestGraph(t *testing.T) {
 
 			b, _ := g.Bytes()
 
-			assert.Equal(t, tc.expected, b, "accept method should have created a correct graph structure")
+			assert.Equal(t, string(tc.expected), string(b), "accept method should have created a correct graph structure")
 		})
 	}
 }

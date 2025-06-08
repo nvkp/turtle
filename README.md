@@ -104,6 +104,10 @@ err := turtle.Unmarshal(
 
 Both `turtle.Marshal(v interface{}) ([]byte, error)` and `turtle.Unmarshal(data []byte, v interface{}) error` functions can handle two optional field tags `datatype` and `label` annotating the object literals. The struct's attributes with those field tags can either be pointers to string or string values.
 
+Strings in objects are determined if they are IRIs, Literals, or Blank Nodes by their content. If a field for `turtle:"objecttype"` is provided, you can skip this step for Marshaling and ensure the right type is being used. For unmarshaling, it is detected at parsing time and injected into the struct, allowing for easy unmarshal/marshal loops.
+
+The values for objecttype can be "literal", "iri", or "blank".
+
 ```golang
 var triples = []struct {
 	Subject   string `turtle:"subject"`
@@ -111,6 +115,7 @@ var triples = []struct {
 	Object    string `turtle:"object"`
 	Label     string `turtle:"label"`
 	DataType  string `turtle:"datatype"`
+	ObjectType string `turtle:"objecttype"` // "literal" here
 }{}
 
 rdf := `

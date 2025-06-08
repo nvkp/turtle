@@ -59,7 +59,7 @@ func marshal(g *graph.Graph, v reflect.Value) error {
 }
 
 func marshalStruct(g *graph.Graph, v reflect.Value) error {
-	var t [5]string
+	var t [6]string
 
 	for i := 0; i < v.NumField(); i++ {
 		field := v.Field(i)
@@ -83,6 +83,10 @@ func marshalStruct(g *graph.Graph, v reflect.Value) error {
 			part = label
 		case "datatype":
 			part = datatype
+		case "objecttype":
+			part = objecttype
+		case "base", "prefix":
+			continue
 		}
 
 		var word string

@@ -192,19 +192,19 @@ var scanTestCases = map[string]struct {
 			".",
 		},
 		expectedTriples: [][3]string{
-			{"http://somecountry.example/census2007", "http://example.org/stats/isLandlocked", "false"},
+			{"http://somecountry.example/census2007", "http://example.org/stats#isLandlocked", "false"},
 		},
 	},
 	"base_with_ending_slash": {
 		data: []byte(`@base <http://example.org/stats/> .
 						<http://somecountry.example/census2007>
-							<#isLandlocked> false .`),
+						<isLandlocked> false .`),
 		expectedTokens: []string{
 			"@base",
 			"<http://example.org/stats/>",
 			".",
 			"<http://somecountry.example/census2007>",
-			"<#isLandlocked>",
+			"<isLandlocked>",
 			"false",
 			".",
 		},
@@ -302,9 +302,9 @@ var scanTestCases = map[string]struct {
 			".",
 		},
 		expectedTriples: [][3]string{
-			{"http://example.org/green-goblin", "http://www.perceive.net/schemas/relationship/enemyOf", "http://example.org/spiderman"},
-			{"http://example.org/green-goblin", "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", "http://xmlns.com/foaf/0.1/Person"},
-			{"http://example.org/green-goblin", "http://xmlns.com/foaf/0.1/name", "Green Goblin"},
+			{"http://example.org/#green-goblin", "http://www.perceive.net/schemas/relationship/enemyOf", "http://example.org/#spiderman"},
+			{"http://example.org/#green-goblin", "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", "http://xmlns.com/foaf/0.1/Person"},
+			{"http://example.org/#green-goblin", "http://xmlns.com/foaf/0.1/name", "Green Goblin"},
 		},
 	},
 	"spiderman n-triples": {

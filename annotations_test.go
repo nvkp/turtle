@@ -8,19 +8,21 @@ import (
 )
 
 type tripleWithAnnotationValues struct {
-	Subject   string `turtle:"subject"`
-	Predicate string `turtle:"predicate"`
-	Object    string `turtle:"object"`
-	Label     string `turtle:"label"`
-	DataType  string `turtle:"datatype"`
+	Subject    string `turtle:"subject"`
+	Predicate  string `turtle:"predicate"`
+	Object     string `turtle:"object"`
+	Label      string `turtle:"label"`
+	DataType   string `turtle:"datatype"`
+	ObjectType string `turtle:"objecttype"`
 }
 
 type tripleWithAnnotationPointers struct {
-	Subject   string  `turtle:"subject"`
-	Predicate string  `turtle:"predicate"`
-	Object    string  `turtle:"object"`
-	Label     *string `turtle:"label"`
-	DataType  *string `turtle:"datatype"`
+	Subject    string  `turtle:"subject"`
+	Predicate  string  `turtle:"predicate"`
+	Object     string  `turtle:"object"`
+	Label      *string `turtle:"label"`
+	DataType   *string `turtle:"datatype"`
+	ObjectType *string `turtle:"objecttype"`
 }
 
 var marshalWithAnnotationTestCases = map[string]struct {
@@ -30,40 +32,44 @@ var marshalWithAnnotationTestCases = map[string]struct {
 }{
 	"one_triple_with_label_value": {
 		triples: tripleWithAnnotationValues{
-			Subject:   "http://example.org/person/Mark_Twain",
-			Predicate: "http://example.org/relation/name",
-			Object:    "Huckleberry Finn",
-			Label:     "en",
+			Subject:    "http://example.org/person/Mark_Twain",
+			Predicate:  "http://example.org/relation/name",
+			Object:     "Huckleberry Finn",
+			Label:      "en",
+			ObjectType: "literal",
 		},
 		expString: `<http://example.org/person/Mark_Twain> <http://example.org/relation/name> "Huckleberry Finn"@en .
 `,
 	},
 	"one_triple_with_datatype_value": {
 		triples: tripleWithAnnotationValues{
-			Subject:   "http://example.org/person/Mark_Twain",
-			Predicate: "http://example.org/relation/name",
-			Object:    "Huckleberry Finn",
-			DataType:  "xsd:string",
+			Subject:    "http://example.org/person/Mark_Twain",
+			Predicate:  "http://example.org/relation/name",
+			Object:     "Huckleberry Finn",
+			DataType:   "xsd:string",
+			ObjectType: "literal",
 		},
 		expString: `<http://example.org/person/Mark_Twain> <http://example.org/relation/name> "Huckleberry Finn"^^xsd:string .
 `,
 	},
 	"one_triple_with_label_pointer": {
 		triples: tripleWithAnnotationPointers{
-			Subject:   "http://example.org/person/Mark_Twain",
-			Predicate: "http://example.org/relation/name",
-			Object:    "Huckleberry Finn",
-			Label:     ptr("en"),
+			Subject:    "http://example.org/person/Mark_Twain",
+			Predicate:  "http://example.org/relation/name",
+			Object:     "Huckleberry Finn",
+			Label:      ptr("en"),
+			ObjectType: ptr("literal"),
 		},
 		expString: `<http://example.org/person/Mark_Twain> <http://example.org/relation/name> "Huckleberry Finn"@en .
 `,
 	},
 	"one_triple_with_datatype_pointer": {
 		triples: tripleWithAnnotationPointers{
-			Subject:   "http://example.org/person/Mark_Twain",
-			Predicate: "http://example.org/relation/name",
-			Object:    "Huckleberry Finn",
-			DataType:  ptr("xsd:string"),
+			Subject:    "http://example.org/person/Mark_Twain",
+			Predicate:  "http://example.org/relation/name",
+			Object:     "Huckleberry Finn",
+			DataType:   ptr("xsd:string"),
+			ObjectType: ptr("literal"),
 		},
 		expString: `<http://example.org/person/Mark_Twain> <http://example.org/relation/name> "Huckleberry Finn"^^xsd:string .
 `,
@@ -71,16 +77,18 @@ var marshalWithAnnotationTestCases = map[string]struct {
 	"slice_of_triples_with_annotations": {
 		triples: []tripleWithAnnotationValues{
 			{
-				Subject:   "http://example.org/person/Mark_Twain",
-				Predicate: "http://example.org/relation/name",
-				Object:    "Huckleberry Finn",
-				DataType:  "xsd:string",
+				Subject:    "http://example.org/person/Mark_Twain",
+				Predicate:  "http://example.org/relation/name",
+				Object:     "Huckleberry Finn",
+				DataType:   "xsd:string",
+				ObjectType: "literal",
 			},
 			{
-				Subject:   "http://example.org/person/Mark_Twain",
-				Predicate: "http://example.org/relation/name",
-				Object:    "Huckleberry Finn",
-				Label:     "en",
+				Subject:    "http://example.org/person/Mark_Twain",
+				Predicate:  "http://example.org/relation/name",
+				Object:     "Huckleberry Finn",
+				Label:      "en",
+				ObjectType: "literal",
 			},
 		},
 		expString: `<http://example.org/person/Mark_Twain> <http://example.org/relation/name> "Huckleberry Finn"^^xsd:string, "Huckleberry Finn"@en .
@@ -102,10 +110,11 @@ func TestUnmarshalStructWithLabel(t *testing.T) {
 	var target tripleWithAnnotationValues
 	data := []byte(`<http://example.org/person/Mark_Twain> <http://example.org/relation/name> "Huckleberry Finn"@en .`)
 	expected := tripleWithAnnotationValues{
-		Subject:   "http://example.org/person/Mark_Twain",
-		Predicate: "http://example.org/relation/name",
-		Object:    "Huckleberry Finn",
-		Label:     "en",
+		Subject:    "http://example.org/person/Mark_Twain",
+		Predicate:  "http://example.org/relation/name",
+		Object:     "Huckleberry Finn",
+		Label:      "en",
+		ObjectType: "literal",
 	}
 
 	err := turtle.Unmarshal(data, &target)
@@ -117,10 +126,11 @@ func TestUnmarshalStructWithDataType(t *testing.T) {
 	var target tripleWithAnnotationValues
 	data := []byte(`<http://example.org/person/Mark_Twain> <http://example.org/relation/name> "Huckleberry Finn"^^xsd:string .`)
 	expected := tripleWithAnnotationValues{
-		Subject:   "http://example.org/person/Mark_Twain",
-		Predicate: "http://example.org/relation/name",
-		Object:    "Huckleberry Finn",
-		DataType:  "xsd:string",
+		Subject:    "http://example.org/person/Mark_Twain",
+		Predicate:  "http://example.org/relation/name",
+		Object:     "Huckleberry Finn",
+		DataType:   "xsd:string",
+		ObjectType: "literal",
 	}
 
 	err := turtle.Unmarshal(data, &target)
@@ -132,10 +142,11 @@ func TestUnmarshalStructWithLabelPointer(t *testing.T) {
 	var target tripleWithAnnotationPointers
 	data := []byte(`<http://example.org/person/Mark_Twain> <http://example.org/relation/name> "Huckleberry Finn"@en .`)
 	expected := tripleWithAnnotationPointers{
-		Subject:   "http://example.org/person/Mark_Twain",
-		Predicate: "http://example.org/relation/name",
-		Object:    "Huckleberry Finn",
-		Label:     ptr("en"),
+		Subject:    "http://example.org/person/Mark_Twain",
+		Predicate:  "http://example.org/relation/name",
+		Object:     "Huckleberry Finn",
+		Label:      ptr("en"),
+		ObjectType: ptr("literal"),
 	}
 
 	err := turtle.Unmarshal(data, &target)
