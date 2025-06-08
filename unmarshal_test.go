@@ -129,3 +129,62 @@ func TestUnmarshalNotAPointer(t *testing.T) {
 	err := turtle.Unmarshal(data, target)
 	assert.ErrorIs(t, err, turtle.ErrNoPointerValue, "function Unmarshal should have returned correct error")
 }
+
+func TestUnmarshalBaseAndPrefixes(t *testing.T) {
+	target := make([]tripleWithMetadata, 0)
+	data := []byte(`
+@base <http://example.org/> .
+@prefix books: <https://amazon.com/> .
+</person/Mark_Twain> </relation/author> books:Huckleberry_Finn .`)
+
+	expected := []tripleWithMetadata{
+		{
+			Base:      "http://example.org/",
+			Prefixes:  map[string]string{"books": "https://amazon.com/"},
+			Subject:   "/person/Mark_Twain",
+			Predicate: "/relation/author",
+			Object:    "https://amazon.com/Huckleberry_Finn",
+		},
+	}
+
+	err := turtle.Unmarshal(data, &target)
+	assert.NoError(t, err, "got an error unmarshaling turtle with base and prefixes")
+	assert.Equal(t, expected, target, "not equal to expected data")
+
+	c := turtle.Config{
+		ResolveURLs: true,
+	}
+
+	target = make([]tripleWithMetadata, 0)
+	expected = []tripleWithMetadata{
+		{
+			Base:      "http://example.org/",
+			Prefixes:  map[string]string{"books": "https://amazon.com/"},
+			Subject:   "http://example.org/person/Mark_Twain",
+			Predicate: "http://example.org/relation/author",
+			Object:    "books:Huckleberry_Finn",
+		},
+	}
+
+	err = c.Unmarshal(data, &target)
+	assert.NoError(t, err, "got an error unmarshaling turtle with base and prefixes")
+	assert.Equal(t, expected, target, "not equal to expected data")
+
+	// unmarshal with pre-set data instead of in the document
+	data = []byte(`
+</person/Mark_Twain> </relation/author> books:Huckleberry_Finn .`)
+
+	c = turtle.Config{
+		ResolveURLs: true,
+		Base:        "http://example.org/",
+		Prefixes: map[string]string{
+			"books": "https://amazon.com/",
+		},
+	}
+
+	target = make([]tripleWithMetadata, 0)
+	// result should be exactly the same
+	err = c.Unmarshal(data, &target)
+	assert.NoError(t, err, "got an error unmarshaling turtle with base and prefixes")
+	assert.Equal(t, expected, target, "not equal to expected data")
+}

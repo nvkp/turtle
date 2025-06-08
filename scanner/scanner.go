@@ -8,12 +8,27 @@ import (
 	"strings"
 )
 
+// Options changes the behavior of the scanner. It is passed to NewWithOptions.
+type Options struct {
+	// If true, will normalize URLs around the Base parameter and Prefixes for
+	// output, rewriting URLs that match.
+	ResolveURLs bool
+	// If set with ResolveURLs, URLs will be shortened to their relative
+	// representation to the base.
+	Base string
+	// If set with ResolveURLs, URLs will be shortened to their relative
+	// representation to the base of the prefix on match, and the prefix applied.
+	// Resource tags ("<>") will be omitted from this representation.
+	Prefixes map[string]string
+}
+
 var regexBlankNode = regexp.MustCompile(`_:.+`)
 
 // Scanner uses bufio.Scanner to parse the provided byte slice word by word.
 // It keeps information about prefixes and base of the provided graph and
 // the next triple to be read.
 type Scanner struct {
+	options          Options
 	t                [][5]string
 	data             []byte
 	scanByteCounter  *scanByteCounter
@@ -54,16 +69,29 @@ type collectionItem struct {
 
 // New accepts a byte slice of the Turtle data and returns a new scanner.Scanner.
 func New(data []byte) *Scanner {
+	return NewWithOptions(data, Options{})
+}
+
+func NewWithOptions(data []byte, options Options) *Scanner {
 	counter := &scanByteCounter{}
 	s := newBufioScanner(data)
 	s.Split(counter.splitFunc())
 
+	base := options.Base
+	prefixes := options.Prefixes
+
+	if prefixes == nil {
+		prefixes = make(map[string]string)
+	}
+
 	return &Scanner{
+		options:         options,
 		data:            data,
 		scanByteCounter: counter,
 		s:               s,
 		t:               make([][5]string, 0),
-		prefixes:        make(map[string]string),
+		base:            base,
+		prefixes:        prefixes,
 		blankNodes:      make(map[string]struct{}),
 		bnLists:         make([]blankNodeList, 0),
 		colls:           make([]collection, 0),

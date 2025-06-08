@@ -5,6 +5,21 @@ import (
 	"sort"
 )
 
+// Options changes the behavior of the graph. It is passed to NewWithOptions.
+type Options struct {
+	// If true, will normalize URLs around the Base parameter and Prefixes for
+	// output.
+	ResolveURLs bool
+	// If set, will output a `@base` pragma at the start and if ResolveURLs is
+	// true will normalize all URLs that start with the base to their relative
+	// components.
+	Base string
+	// If set, if ResolveURLs is true, any encountering of the prefix URL prefixes
+	// will be normalized to use the prefix. Additionally, @prefix lines are
+	// output at the top of the document for each one.
+	Prefixes map[string]string
+}
+
 type object struct {
 	item     string
 	datatype string
@@ -15,13 +30,20 @@ type object struct {
 // and can return a byte slice containing Turtle data of all
 // triples consumed.
 type Graph struct {
-	m map[string]map[string][]object
+	options Options
+	m       map[string]map[string][]object
 }
 
-// New returns a pointer to a new intance of graph.Graph
+// New returns a pointer to a new instance of graph.Graph. No options are set.
 func New() *Graph {
+	return NewWithOptions(Options{})
+}
+
+// NewWithOptions constructs a graph with options to tweak its behavior. See Options.
+func NewWithOptions(options Options) *Graph {
 	return &Graph{
-		m: make(map[string]map[string][]object),
+		options: options,
+		m:       make(map[string]map[string][]object),
 	}
 }
 
@@ -86,9 +108,11 @@ func (g *Graph) Bytes() ([]byte, error) {
 
 	var b []byte
 
-	subjects := sortSubjects(g)
+	g.writePragmas(&b)
+
+	subjects := g.sortSubjects()
 	for _, subject := range subjects {
-		b = append(b, []byte(fmt.Sprintf("%s ", sanitize(subject)))...)
+		b = append(b, []byte(fmt.Sprintf("%s ", g.sanitize(subject, false)))...)
 
 		predicates := sortPredicates(g.m[subject])
 
@@ -103,17 +127,17 @@ func (g *Graph) Bytes() ([]byte, error) {
 			// when single predicate for a subject
 			if len(predicates) == 1 {
 				// write the predicate
-				b = append(b, []byte(fmt.Sprintf("<%s> ", predicate))...)
+				b = append(b, []byte(fmt.Sprintf("%s ", g.sanitize(predicate, true)))...)
 				// write the predicate's objects
-				writeObjects(&b, objects)
+				g.writeObjects(&b, objects)
 				continue
 			}
 
 			// when multiple predicates for subject write predicate on a new line with indentation
-			b = append(b, []byte(fmt.Sprintf("\n\t<%s> ", predicate))...)
+			b = append(b, []byte(fmt.Sprintf("\n\t%s ", g.sanitize(predicate, true)))...)
 
 			// write the predicate's objects
-			writeObjects(&b, objects)
+			g.writeObjects(&b, objects)
 
 			// when predicate not last, write semicolon
 			if predicateCounter != len(predicates) {
@@ -127,9 +151,9 @@ func (g *Graph) Bytes() ([]byte, error) {
 	return b, nil
 }
 
-func writeObjects(b *[]byte, objects []object) {
+func (g *Graph) writeObjects(b *[]byte, objects []object) {
 	for i, object := range objects {
-		*b = append(*b, []byte(sanitizeObject(object))...)
+		*b = append(*b, []byte(g.sanitizeObject(object))...)
 		// when single object for predicate
 		if len(objects) == 1 {
 			break
@@ -143,7 +167,17 @@ func writeObjects(b *[]byte, objects []object) {
 	}
 }
 
-func sortSubjects(g *Graph) []string {
+func (g *Graph) writePragmas(b *[]byte) {
+	if g.options.Base != "" {
+		*b = append(*b, []byte(fmt.Sprintf("@base <%s> .\n", g.options.Base))...)
+	}
+
+	for tag, url := range g.options.Prefixes {
+		*b = append(*b, []byte(fmt.Sprintf("@prefix %s: <%s> .\n", tag, url))...)
+	}
+}
+
+func (g *Graph) sortSubjects() []string {
 	if g == nil || g.m == nil {
 		return nil
 	}
