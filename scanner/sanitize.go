@@ -3,6 +3,7 @@ package scanner
 import (
 	"fmt"
 	"net/url"
+	"regexp"
 	"strings"
 )
 
@@ -11,72 +12,102 @@ const (
 	labelDelimiter    = "@"
 )
 
-func (s *Scanner) sanitize(token string) (string, string, string) {
-	var label, datatype string
+var numberRegex = regexp.MustCompile(`^[-0-9]+(?:\.[0-9]+)?`)
 
-	if !s.options.ResolveURLs {
-		// apply the stored prefixes
-		for prefix, value := range s.prefixes {
-			if !strings.HasPrefix(token, fmt.Sprintf("%s:", prefix)) {
-				continue
-			}
-			i := strings.IndexAny(token, ":")
-			token = fmt.Sprintf("%s%s", value, token[i+1:])
+func expandPrefix(token string, value string) string {
+	i := strings.Index(token, ":")
+	if len(token) <= i+1 {
+		return ""
+	} else {
+		if len(token) > i+2 && (token[i+1] == '/' || token[i+1] == '#') && value[len(value)-1] == token[i+1] {
+			// if characters exist for both, trim token since we were going to do that anyway
+			token = token[i+2:]
+		} else if !(token[i+1] == '/' || token[i+1] == '#') && !(value[len(value)-1] == '/' || value[len(value)-1] == '#') {
+			// inverse, no characters; we need to add a slash
+			token = fmt.Sprintf("/%s", token[i+1:])
+		} else {
+			// otherwise, just trim the colon
+			token = token[i+1:]
+		}
+
+		return fmt.Sprintf("<%s%s>", value, token)
+	}
+}
+
+func (s *Scanner) sanitize(token string) (string, string, string, string) {
+	var label, datatype string
+	typ := "literal"
+
+	// apply the stored prefixes
+	for prefix, value := range s.prefixes {
+		if strings.HasPrefix(token, fmt.Sprintf("%s:", prefix)) {
+			token = expandPrefix(token, value)
+			typ = "iri"
+			break
 		}
 	}
 
 	// apply the stored base
 	if strings.HasPrefix(token, "<") {
+		typ = "iri"
 		token = trim(token)
-		if s.options.ResolveURLs {
-			for prefix, value := range s.prefixes {
-				if strings.HasPrefix(token, value) {
-					token = fmt.Sprintf("%s:%s", prefix, strings.TrimPrefix(token, value))
+		// short path for easy ones
+		if (token == "." || token == "/") && s.base != "" {
+			token = s.base
+		} else {
+			u, _ := url.Parse(token)
+			if u == nil || u.Host == "" && s.base != "" {
+				// special case for blank anchors
+				if s.base[len(s.base)-1] == '#' && token[0] == '#' {
+					token = s.base + token[1:]
+				} else {
+					b, err := url.Parse(s.base)
+					if err == nil {
+						if token[0] == '#' {
+							// if we have # on the token side, just append the token
+							token = b.String() + token
+						} else {
+							t := b.JoinPath(token)
+							if t.String() == b.String() {
+								// preserve the original form (no slash possibly, String call appends one on domains)
+								token = s.base
+							} else {
+								token = t.String()
+							}
+						}
+					}
 				}
 			}
 		}
+	} else if strings.HasPrefix(token, `"`) || strings.HasPrefix(token, "-") || numberRegex.MatchString(token) {
+		typ = "literal"
 
-		u, _ := url.Parse(token)
-		if u == nil || u.Host == "" && s.base != "" {
-			// special case for blank anchors
-			if s.base[len(s.base)-1] == '#' || token[0] == '#' {
-				if token != "" && token[0] == '#' {
-					token = token[1:]
-				}
-
-				token = s.base + token
-			} else if s.options.ResolveURLs {
-				b, err := url.Parse(s.base)
-				if err == nil {
-					token = b.JoinPath(token).String()
-				}
-			}
+		// extract data type suffix
+		lastDataTypeIndex := lastIndex(token, dataTypeDelimiter)
+		if lastDataTypeIndex != -1 {
+			// Split the string into two parts
+			datatype = token[lastDataTypeIndex+len(dataTypeDelimiter):]
+			token = token[:lastDataTypeIndex]
 		}
-	}
 
-	// extract data type suffix
-	lastDataTypeIndex := lastIndex(token, dataTypeDelimiter)
-	if lastDataTypeIndex != -1 {
-		// Split the string into two parts
-		datatype = token[lastDataTypeIndex+len(dataTypeDelimiter):]
-		token = token[:lastDataTypeIndex]
-	}
+		// extract label suffix
+		lastLabelIndex := lastIndex(token, labelDelimiter)
+		if lastLabelIndex != -1 {
+			// Split the string into two parts
+			label = token[lastLabelIndex+len(labelDelimiter):]
+			token = token[:lastLabelIndex]
+		}
+	} else {
+		typ = "iri"
 
-	// extract label suffix
-	lastLabelIndex := lastIndex(token, labelDelimiter)
-	if lastLabelIndex != -1 {
-		// Split the string into two parts
-		label = token[lastLabelIndex+len(labelDelimiter):]
-		token = token[:lastLabelIndex]
-	}
-
-	// replace "a" keyword with rdf:type predicate
-	if token == "a" {
-		token = rdfTypeIRI
+		// replace "a" keyword with rdf:type predicate
+		if token == "a" {
+			token = rdfTypeIRI
+		}
 	}
 
 	// trim token
-	return trim(token), label, datatype
+	return trim(token), label, datatype, typ
 }
 
 var trimmedPairs = []struct {

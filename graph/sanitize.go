@@ -8,13 +8,14 @@ import (
 )
 
 const (
+	rdfTypeIRI     = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
 	runeNewLine    = '\u000A' // \n
 	runeApostrophe = '\u0027' // '
 	runeQuotation  = '\u0022' // "
 )
 
 func (g *Graph) sanitizeObject(obj object) string {
-	item := g.sanitize(obj.item, false)
+	item := g.sanitize(obj.item, obj.typ, false)
 
 	if obj.label != "" {
 		return fmt.Sprintf("%s@%s", item, obj.label)
@@ -27,42 +28,43 @@ func (g *Graph) sanitizeObject(obj object) string {
 	return item
 }
 
-func (g *Graph) sanitize(str string, predicate bool) string {
+func (g *Graph) sanitize(str string, typ string, predicate bool) string {
 	if len(str) == 0 {
 		return str
-	}
-
-	if isIRI(str) {
-		if g.options.ResolveURLs {
-			for key, prefix := range g.options.Prefixes {
-				if strings.HasPrefix(str, prefix) {
-					return fmt.Sprintf("%s:%s", key, strings.TrimPrefix(str, prefix))
-				}
-			}
-
-			if g.options.Base != "" && strings.HasPrefix(str, g.options.Base) {
-				if g.options.Base == str {
-					str = "."
-				}
-
-				return fmt.Sprintf("<%s>", strings.TrimPrefix(str, g.options.Base))
-			}
-		}
-
-		return fmt.Sprintf("<%s>", str)
 	}
 
 	if isBlankNode(str) {
 		return str
 	}
 
-	if !isBlankNode(str) && !predicate {
-		edge := literalEdge(str)
+	if typ == "iri" || (typ == "" && isIRI(str)) {
+		if str == "." && g.options.Base != "" {
+			return g.options.Base
+		}
 
-		return fmt.Sprintf("%s%s%s", edge, str, edge)
+		if str == "a" && predicate {
+			return fmt.Sprintf("<%s>", rdfTypeIRI)
+		}
+
+		for key := range g.options.Prefixes {
+			if strings.HasPrefix(str, key+":") {
+				return str
+			}
+		}
+
+		if g.options.Base != "" && strings.HasPrefix(str, g.options.Base) {
+			if g.options.Base == str {
+				str = "."
+			}
+
+			return fmt.Sprintf("<%s>", strings.TrimPrefix(str, g.options.Base))
+		}
+
+		return fmt.Sprintf("<%s>", str)
 	}
 
-	return str
+	edge := literalEdge(str)
+	return fmt.Sprintf("%s%s%s", edge, str, edge)
 }
 
 func isBlankNode(str string) bool {

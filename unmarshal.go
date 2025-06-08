@@ -8,11 +8,19 @@ import (
 )
 
 const (
+	// TypeIRI is for `turtle:"objecttype"` and indicates the object is an IRI.
+	TypeIRI = "iri"
+	// TypeLiteral is for `turtle:"objecttype"` and indicates the object is a Literal.
+	TypeLiteral = "literal"
+)
+
+const (
 	subject int = iota
 	predicate
 	object
 	label
 	datatype
+	objecttype
 )
 
 var (
@@ -109,7 +117,7 @@ func unmarshalStruct(s *scanner.Scanner, v reflect.Value) (error, bool) {
 		return errors.New("value not struct"), false
 	}
 
-	var t [5]string
+	var t [6]string
 
 	// prevent empty structs from being generated from pragmas
 outer:
@@ -154,6 +162,8 @@ outer:
 			part = label
 		case "datatype":
 			part = datatype
+		case "objecttype":
+			part = objecttype
 		case "base", "prefix":
 			part = -1
 		}

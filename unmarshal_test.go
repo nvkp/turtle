@@ -137,12 +137,13 @@ func TestUnmarshalBaseAndPrefixes(t *testing.T) {
 @prefix books: <https://amazon.com/> .
 </person/Mark_Twain> </relation/author> books:Huckleberry_Finn .`)
 
+	target = make([]tripleWithMetadata, 0)
 	expected := []tripleWithMetadata{
 		{
 			Base:      "http://example.org/",
 			Prefixes:  map[string]string{"books": "https://amazon.com/"},
-			Subject:   "/person/Mark_Twain",
-			Predicate: "/relation/author",
+			Subject:   "http://example.org/person/Mark_Twain",
+			Predicate: "http://example.org/relation/author",
 			Object:    "https://amazon.com/Huckleberry_Finn",
 		},
 	}
@@ -151,32 +152,12 @@ func TestUnmarshalBaseAndPrefixes(t *testing.T) {
 	assert.NoError(t, err, "got an error unmarshaling turtle with base and prefixes")
 	assert.Equal(t, expected, target, "not equal to expected data")
 
-	c := turtle.Config{
-		ResolveURLs: true,
-	}
-
-	target = make([]tripleWithMetadata, 0)
-	expected = []tripleWithMetadata{
-		{
-			Base:      "http://example.org/",
-			Prefixes:  map[string]string{"books": "https://amazon.com/"},
-			Subject:   "http://example.org/person/Mark_Twain",
-			Predicate: "http://example.org/relation/author",
-			Object:    "books:Huckleberry_Finn",
-		},
-	}
-
-	err = c.Unmarshal(data, &target)
-	assert.NoError(t, err, "got an error unmarshaling turtle with base and prefixes")
-	assert.Equal(t, expected, target, "not equal to expected data")
-
 	// unmarshal with pre-set data instead of in the document
 	data = []byte(`
 </person/Mark_Twain> </relation/author> books:Huckleberry_Finn .`)
 
-	c = turtle.Config{
-		ResolveURLs: true,
-		Base:        "http://example.org/",
+	c := turtle.Config{
+		Base: "http://example.org/",
 		Prefixes: map[string]string{
 			"books": "https://amazon.com/",
 		},
@@ -187,4 +168,18 @@ func TestUnmarshalBaseAndPrefixes(t *testing.T) {
 	err = c.Unmarshal(data, &target)
 	assert.NoError(t, err, "got an error unmarshaling turtle with base and prefixes")
 	assert.Equal(t, expected, target, "not equal to expected data")
+}
+
+func TestUnmarshalSubjectURLTrailingSlash(t *testing.T) {
+	var target triple
+	data := []byte(`<.> <http://example.org/relation/author> <http://example.org/books/Huckleberry_Finn> .`)
+	expected := triple{
+		Subject:   "http://example.org",
+		Predicate: "http://example.org/relation/author",
+		Object:    "http://example.org/books/Huckleberry_Finn",
+	}
+
+	err := (&turtle.Config{Base: "http://example.org"}).Unmarshal(data, &target)
+	assert.NoError(t, err, "function Unmarshal should have returned no error")
+	assert.Equal(t, expected, target, "function Unmarshal should have assigned correct values to the target triple")
 }
