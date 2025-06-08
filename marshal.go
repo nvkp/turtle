@@ -83,6 +83,8 @@ func marshalStruct(g *graph.Graph, v reflect.Value) error {
 			part = label
 		case "datatype":
 			part = datatype
+		case "base", "prefix":
+			continue
 		}
 
 		var word string

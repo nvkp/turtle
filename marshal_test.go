@@ -320,3 +320,17 @@ func TestMarshalOptions(t *testing.T) {
 </person/Mark_Twain> </relation/author> book:Huckleberry_Finn .
 `), "output was not equal")
 }
+
+func TestMarshalPrefixBase(t *testing.T) {
+	_, err := turtle.Marshal(tripleWithMetadata{
+		Subject:   "http://example.org/Mark_Twain",
+		Predicate: "a",
+		Object:    "foaf:Person",
+		Prefixes: map[string]string{
+			"foaf": "http://xmlns.com/foaf/0.1",
+		},
+		Base: "http://example.org",
+	})
+
+	assert.NoError(t, err, "no error expected marshaling with base and prefixes")
+}
