@@ -121,7 +121,7 @@ func (s *Scanner) Next() bool {
 		token := s.s.Text()
 
 		// if bumped into a prefix form, extract and store the prefix and its value
-		if token == "@prefix" {
+		if token == "@prefix" || strings.ToLower(token) == "prefix" {
 			if ok := s.s.Scan(); !ok {
 				return false
 			}
@@ -145,7 +145,7 @@ func (s *Scanner) Next() bool {
 		}
 
 		// if bumped into a base form, extract and store its value
-		if token == "@base" {
+		if token == "@base" || strings.ToLower(token) == "base" {
 			if ok := s.s.Scan(); !ok {
 				return false
 			}

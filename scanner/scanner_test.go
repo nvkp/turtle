@@ -1338,6 +1338,82 @@ var scanTestCases = map[string]struct {
 			{"http://qudt.org/vocab/unit/A", "http://qudt.org/schema/qudt/hasQuantityKind", `http://qudt.org/vocab/quantitykind/TotalCurrent`},
 		},
 	},
+	"read_sparql_style_prefix_and_base": {
+		data: []byte(`BASE <http://example.org/> .
+						PREFIX foaf: <http://xmlns.com/foaf/0.1/> .
+						PREFIX rel: <http://www.perceive.net/schemas/relationship/> .
+
+						<#green-goblin>
+							rel:enemyOf <#spiderman> ;
+							<http://www.w3.org/1999/02/22-rdf-syntax-ns#type> foaf:Person ;
+							foaf:name "Green Goblin".`),
+		expectedTokens: []string{
+			"BASE",
+			"<http://example.org/>",
+			".",
+			"PREFIX",
+			"foaf:",
+			"<http://xmlns.com/foaf/0.1/>",
+			".",
+			"PREFIX",
+			"rel:",
+			"<http://www.perceive.net/schemas/relationship/>",
+			".",
+			"<#green-goblin>",
+			"rel:enemyOf",
+			"<#spiderman>",
+			";",
+			"<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
+			"foaf:Person",
+			";",
+			"foaf:name",
+			`"Green Goblin"`,
+			".",
+		},
+		expectedTriples: [][3]string{
+			{"http://example.org/#green-goblin", "http://www.perceive.net/schemas/relationship/enemyOf", "http://example.org/#spiderman"},
+			{"http://example.org/#green-goblin", "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", "http://xmlns.com/foaf/0.1/Person"},
+			{"http://example.org/#green-goblin", "http://xmlns.com/foaf/0.1/name", "Green Goblin"},
+		},
+	},
+	"read_sparql_style_prefix_and_base:lowercase": {
+		data: []byte(`base <http://example.org/> .
+						prefix foaf: <http://xmlns.com/foaf/0.1/> .
+						prefix rel: <http://www.perceive.net/schemas/relationship/> .
+
+						<#green-goblin>
+							rel:enemyOf <#spiderman> ;
+							<http://www.w3.org/1999/02/22-rdf-syntax-ns#type> foaf:Person ;
+							foaf:name "Green Goblin".`),
+		expectedTokens: []string{
+			"base",
+			"<http://example.org/>",
+			".",
+			"prefix",
+			"foaf:",
+			"<http://xmlns.com/foaf/0.1/>",
+			".",
+			"prefix",
+			"rel:",
+			"<http://www.perceive.net/schemas/relationship/>",
+			".",
+			"<#green-goblin>",
+			"rel:enemyOf",
+			"<#spiderman>",
+			";",
+			"<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
+			"foaf:Person",
+			";",
+			"foaf:name",
+			`"Green Goblin"`,
+			".",
+		},
+		expectedTriples: [][3]string{
+			{"http://example.org/#green-goblin", "http://www.perceive.net/schemas/relationship/enemyOf", "http://example.org/#spiderman"},
+			{"http://example.org/#green-goblin", "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", "http://xmlns.com/foaf/0.1/Person"},
+			{"http://example.org/#green-goblin", "http://xmlns.com/foaf/0.1/name", "Green Goblin"},
+		},
+	},
 }
 
 func TestScanTurtle(t *testing.T) {
