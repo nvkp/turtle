@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -30,6 +31,12 @@ func ErrorIs(t *testing.T, err, target error, msg string, args ...interface{}) {
 	}
 
 	t.Errorf("%s: error: %v is not error: %v", fmt.Sprintf(msg, args...), err, target)
+}
+
+func Contains(t *testing.T, s string, substr string, msg string, args ...interface{}) {
+	if !strings.Contains(s, substr) {
+		t.Errorf("%s: string: %s does not contain substring: %s", fmt.Sprintf(msg, args...), s, substr)
+	}
 }
 
 func equal(expected, actual interface{}) bool {

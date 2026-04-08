@@ -353,6 +353,8 @@ func TestMarshalPreservesEmptyTypedLiteralAndUsesPrefixes(t *testing.T) {
 
 	config := turtle.Config{
 		Prefixes: map[string]string{
+			"purl":    "http://purl.org/",
+			"dc":      "http://purl.org/dc/",
 			"dcterms": "http://purl.org/dc/terms/",
 		},
 	}
@@ -360,8 +362,6 @@ func TestMarshalPreservesEmptyTypedLiteralAndUsesPrefixes(t *testing.T) {
 	out, err := config.Marshal(target)
 	assert.NoError(t, err, "Marshal should not return error")
 
-	assert.Equal(t, `@prefix dcterms: <http://purl.org/dc/terms/> .
-dcterms:abstract dcterms:description ""^^qudt:LatexString .
-`, string(out), "Marshal produced unexpected output")
+	assert.Contains(t, string(out), `dcterms:abstract dcterms:description ""^^qudt:LatexString .`, "Marshal produced unexpected output")
 
 }

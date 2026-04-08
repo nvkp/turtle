@@ -75,3 +75,29 @@ func TestSanitize(t *testing.T) {
 		})
 	}
 }
+
+func TestSanitizeInvalidLocalPart(t *testing.T) {
+	g := NewWithOptions(Options{
+		Prefixes: map[string]string{
+			"ex": "http://example.org/",
+		},
+	})
+
+	// Case 1: A valid local part
+	iri1 := "http://example.org/foo"
+	expected1 := "ex:foo"
+	actual1 := g.sanitize(iri1, "iri", false)
+	assert.Equal(t, expected1, actual1, "should use CURIE for valid local part")
+
+	// Case 2: An invalid local part containing '/'
+	iri2 := "http://example.org/foo/bar"
+	expected2 := "<http://example.org/foo/bar>"
+	actual2 := g.sanitize(iri2, "iri", false)
+	assert.Equal(t, expected2, actual2, "should not use CURIE for invalid local part (containing '/')")
+
+	// Case 3: An invalid local part containing ' '
+	iri3 := "http://example.org/foo bar"
+	expected3 := "<http://example.org/foo bar>"
+	actual3 := g.sanitize(iri3, "iri", false)
+	assert.Equal(t, expected3, actual3, "should not use CURIE for invalid local part (containing ' ')")
+}
