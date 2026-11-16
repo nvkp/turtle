@@ -28,11 +28,3 @@ func bufferContainsLiterals(buf []rune) bool {
 
 	return containsOnlyRune(runeQuotation, buf) || containsOnlyRune(runeApostrophe, buf) // " '
 }
-
-func escapedCharacter(buf []rune) bool {
-	if len(buf) < 2 {
-		return false
-	}
-
-	return buf[len(buf)-2] == runeBackslash
-}

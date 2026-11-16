@@ -554,6 +554,40 @@ var scanTestCases = map[string]struct {
 			{"https://schema.org/ComicSeries", "https://schema.org/isPartOf", "https://bib.schema.org"},
 		},
 	},
+	"literal-ending-with-escaped-backslash": {
+		data: []byte(`@prefix ex: <http://example.org/> .
+ex:a ex:p "a\\" .`),
+		expectedTokens: []string{
+			`@prefix`,
+			`ex:`,
+			`<http://example.org/>`,
+			`.`,
+			`ex:a`,
+			`ex:p`,
+			`"a\\"`,
+			`.`,
+		},
+		expectedTriples: [][3]string{
+			{"http://example.org/a", "http://example.org/p", `a\\`},
+		},
+	},
+	"multiline-literal-ending-with-escaped-backslash": {
+		data: []byte(`@prefix ex: <http://example.org/> .
+ex:a ex:p """a\\""" .`),
+		expectedTokens: []string{
+			`@prefix`,
+			`ex:`,
+			`<http://example.org/>`,
+			`.`,
+			`ex:a`,
+			`ex:p`,
+			`"""a\\"""`,
+			`.`,
+		},
+		expectedTriples: [][3]string{
+			{"http://example.org/a", "http://example.org/p", `a\\`},
+		},
+	},
 	"escaped-quation": {
 		data: []byte(`
 					@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
