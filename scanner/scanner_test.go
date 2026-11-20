@@ -554,6 +554,107 @@ var scanTestCases = map[string]struct {
 			{"https://schema.org/ComicSeries", "https://schema.org/isPartOf", "https://bib.schema.org"},
 		},
 	},
+	"multiline-literal-starting-with-quote": {
+		data: []byte(`@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix ex: <http://example.org/> .
+
+ex:Unit dcterms:description """"Decibel" unit""" ;
+	dcterms:alt """""" .`),
+		expectedTokens: []string{
+			`@prefix`,
+			`dcterms:`,
+			`<http://purl.org/dc/terms/>`,
+			`.`,
+			`@prefix`,
+			`ex:`,
+			`<http://example.org/>`,
+			`.`,
+			`ex:Unit`,
+			`dcterms:description`,
+			`""""Decibel" unit"""`,
+			`;`,
+			`dcterms:alt`,
+			`""""""`,
+			`.`,
+		},
+		expectedTriples: [][3]string{
+			{"http://example.org/Unit", "http://purl.org/dc/terms/description", `"Decibel" unit`},
+			{"http://example.org/Unit", "http://purl.org/dc/terms/alt", ""},
+		},
+	},
+	"multiline-literal-other-delimiter-inside": {
+		data: []byte(`@prefix ex: <http://example.org/> .
+ex:a ex:p '''say """ hi''' ;
+	ex:q """it's ''' ok""" .`),
+		expectedTokens: []string{
+			`@prefix`,
+			`ex:`,
+			`<http://example.org/>`,
+			`.`,
+			`ex:a`,
+			`ex:p`,
+			`'''say """ hi'''`,
+			`;`,
+			`ex:q`,
+			`"""it's ''' ok"""`,
+			`.`,
+		},
+		expectedTriples: [][3]string{
+			{"http://example.org/a", "http://example.org/p", `say """ hi`},
+			{"http://example.org/a", "http://example.org/q", `it's ''' ok`},
+		},
+	},
+	"multiline-literal-escaped-quote-run": {
+		data: []byte(`@prefix ex: <http://example.org/> .
+ex:a ex:p """a\""" b""" .`),
+		expectedTokens: []string{
+			`@prefix`,
+			`ex:`,
+			`<http://example.org/>`,
+			`.`,
+			`ex:a`,
+			`ex:p`,
+			`"""a\""" b"""`,
+			`.`,
+		},
+		expectedTriples: [][3]string{
+			{"http://example.org/a", "http://example.org/p", `a\""" b`},
+		},
+	},
+	"literal-ending-with-escaped-backslash": {
+		data: []byte(`@prefix ex: <http://example.org/> .
+ex:a ex:p "a\\" .`),
+		expectedTokens: []string{
+			`@prefix`,
+			`ex:`,
+			`<http://example.org/>`,
+			`.`,
+			`ex:a`,
+			`ex:p`,
+			`"a\\"`,
+			`.`,
+		},
+		expectedTriples: [][3]string{
+			{"http://example.org/a", "http://example.org/p", `a\\`},
+		},
+	},
+	"multiline-literal-ending-with-escaped-backslash": {
+		data: []byte(`@prefix ex: <http://example.org/> .
+ex:a ex:p """a\\""" .`),
+		expectedTokens: []string{
+			`@prefix`,
+			`ex:`,
+			`<http://example.org/>`,
+			`.`,
+			`ex:a`,
+			`ex:p`,
+			`"""a\\"""`,
+			`.`,
+		},
+		expectedTriples: [][3]string{
+			{"http://example.org/a", "http://example.org/p", `a\\`},
+		},
+	},
 	"escaped-quation": {
 		data: []byte(`
 					@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .

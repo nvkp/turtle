@@ -37,24 +37,43 @@ func splitTurtle(data []byte, atEOF bool) (advance int, token []byte, err error)
 	var quotationMark bool
 	var iri bool
 	var prefixedIri bool
-	var runeBuffer []rune
 	var inMultiLineLiteral bool
+	var prevRune rune
+	var runLen int
+	var multiLineDelim rune
+	var backslashes int
 	for width, i := 0, start; i < len(data); i += width {
 		var r rune
 		r, width = utf8.DecodeRune(data[i:])
 
-		// add rune to rune buffer
-		runeBuffer = appendRuneToBuffer(r, runeBuffer)
+		escaped := backslashes%2 == 1
+		if r == runeBackslash {
+			backslashes++
+		} else {
+			backslashes = 0
+		}
 
-		multilineLiteralEdge := bufferContainsLiterals(runeBuffer)
-		escaped := escapedCharacter(runeBuffer)
-		// if the last characters were literals, switch the multiline
-		// literal and literal state
-		if multilineLiteralEdge && !escaped {
+		switch {
+		case escaped:
+			// escaped rune breaks the run
+			runLen = 0
+		case r == prevRune:
+			runLen++
+		default:
+			runLen = 1
+		}
+		prevRune = r
+
+		// a run of 3+ quotes opens or closes a multiline literal
+		multilineLiteralEdge := (r == runeQuotation || r == runeApostrophe) && runLen >= 3
+		if multilineLiteralEdge {
 			if !inMultiLineLiteral && !literal {
 				inMultiLineLiteral = true
 				literal = true
-			} else if inMultiLineLiteral {
+				multiLineDelim = r
+				// quote right after the opener is content
+				runLen = 0
+			} else if inMultiLineLiteral && r == multiLineDelim {
 				inMultiLineLiteral = false
 				literal = false
 			}
@@ -137,7 +156,7 @@ func splitTurtle(data []byte, atEOF bool) (advance int, token []byte, err error)
 			}
 		}
 
-		if len(runeBuffer) == 1 && !literal && !unicode.IsDigit(r) {
+		if i == start && !literal && !unicode.IsDigit(r) {
 			prefixedIri = true
 		}
 
